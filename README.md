@@ -2,7 +2,7 @@
 
 An interactive web tool for encrypting and decrypting messages with the Caesar Cipher, visualized as a spinning dual-disc wheel like an old-school manual cipher device.
 
-**Live demo:** _add your deployed URL here_
+**Live demo:** https://caesar-wheel.vercel.app/
 
 ## Features
 
