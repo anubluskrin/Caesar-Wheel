@@ -305,6 +305,25 @@
   const R_INNER_LETTERS = 140;
   const CX = 250, CY = 250;
 
+  // --- efek suara (Web Audio API, tanpa file eksternal) ---
+  let audioCtx = null;
+  function getAudioCtx(){
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+  function playTick(strength = 1){
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 900 + Math.random() * 200;
+    gain.gain.setValueAtTime(0.15 * strength, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.05);
+  }
+
   const outerDisc = document.getElementById('outerDisc');
   const innerDisc = document.getElementById('innerDisc');
 
@@ -364,6 +383,7 @@
   let dragging = false;
   let dragStartAngle = 0;
   let rotationAtDragStart = 0;
+  let lastBoundaryIndex = 0;
 
   function getAngleFromEvent(evt){
     const svg = innerDiscEl.ownerSVGElement;
@@ -379,21 +399,28 @@
   }
 
   function startDrag(evt){
-    dragging = true;
-    innerDiscEl.classList.add('dragging');
-    dragStartAngle = getAngleFromEvent(evt);
-    rotationAtDragStart = rotationDeg;
-    evt.preventDefault();
-  }
+  dragging = true;
+  innerDiscEl.classList.add('dragging');
+  dragStartAngle = getAngleFromEvent(evt);
+  rotationAtDragStart = rotationDeg;
+  lastBoundaryIndex = Math.round(rotationDeg / degPerLetter);
+  evt.preventDefault();
+}
 
   function moveDrag(evt){
-    if(!dragging) return;
-    const currentAngle = getAngleFromEvent(evt);
-    let delta = currentAngle - dragStartAngle;
-    rotationDeg = rotationAtDragStart + delta;
-    applyRotation(rotationDeg, false);
-    evt.preventDefault();
+  if(!dragging) return;
+  const currentAngle = getAngleFromEvent(evt);
+  let delta = currentAngle - dragStartAngle;
+  rotationDeg = rotationAtDragStart + delta;
+  applyRotation(rotationDeg, false);
+
+  const currentBoundaryIndex = Math.round(rotationDeg / degPerLetter);
+  if(currentBoundaryIndex !== lastBoundaryIndex){
+    playTick();
+    lastBoundaryIndex = currentBoundaryIndex;
   }
+  evt.preventDefault();
+}
 
   function endDrag(){
     if(!dragging) return;
@@ -410,8 +437,8 @@
   window.addEventListener('touchmove', moveDrag, {passive:false});
   window.addEventListener('touchend', endDrag);
 
-  document.getElementById('nudgeLeft').addEventListener('click', ()=> setShift(shift - 1, true));
-  document.getElementById('nudgeRight').addEventListener('click', ()=> setShift(shift + 1, true));
+  document.getElementById('nudgeLeft').addEventListener('click', ()=> { playTick(1.3); setShift(shift - 1, true); });
+  document.getElementById('nudgeRight').addEventListener('click', ()=> { playTick(1.3); setShift(shift + 1, true); });
 
   let mode = 'encode';
   const modeButtons = document.querySelectorAll('.mode-btn');
