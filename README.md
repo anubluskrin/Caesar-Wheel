@@ -1,6 +1,6 @@
 # Caesar Cipher Wheel
 
-An interactive web tool for encrypting and decrypting messages with the Caesar Cipher, visualized as a spinning dual-disc wheel — like an old-school manual cipher device.
+An interactive web tool for encrypting and decrypting messages with the Caesar Cipher, visualized as a spinning dual-disc wheel like an old-school manual cipher device.
 
 **Live demo:** _add your deployed URL here_
 
