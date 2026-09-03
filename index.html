@@ -420,6 +420,11 @@
   if(currentBoundaryIndex !== lastBoundaryIndex){
     playTick();
     lastBoundaryIndex = currentBoundaryIndex;
+
+    // update angka & hasil secara realtime, tanpa animasi/snap
+    shift = ((currentBoundaryIndex % N) + N) % N;
+    shiftBadge.textContent = `geser: ${shift}`;
+    updateOutput();
   }
   evt.preventDefault();
 }
