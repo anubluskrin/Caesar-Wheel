@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roda Sandi Caesar</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap');
+
+  :root{
+    --paper:#e3dcc4;
+    --paper-dark:#d8cfae;
+    --ink:#211d16;
+    --ink-soft:#4a4436;
+    --red:#8c2a1e;
+    --red-soft:#a8493a;
+    --line:#8a8267;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(138,130,103,0.18) 28px),
+      var(--paper);
+    font-family:'Courier Prime', monospace;
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    padding:40px 18px 70px;
+  }
+
+  .sheet{
+    width:100%;
+    max-width:660px;
+  }
+
+  .letterhead{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    border-bottom:3px double var(--ink);
+    padding-bottom:14px;
+    margin-bottom:22px;
+  }
+  .letterhead h1{
+    font-family:'Special Elite', cursive;
+    font-size:30px;
+    font-weight:400;
+    margin:0;
+    line-height:1.2;
+  }
+  .letterhead .ref{
+    font-size:13px;
+    color:var(--ink-soft);
+    text-align:right;
+    line-height:1.6;
+    white-space:nowrap;
+  }
+
+  .intro{
+    font-size:16px;
+    line-height:1.6;
+    max-width:520px;
+    margin:0 0 26px;
+  }
+
+  .stamp{
+    display:inline-block;
+    border:2px solid var(--red);
+    color:var(--red);
+    font-family:'Special Elite', cursive;
+    font-size:12px;
+    padding:3px 9px;
+    transform:rotate(-3deg);
+    margin-left:10px;
+  }
+
+  .stage-wrap{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 0 10px;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    margin-bottom:24px;
+  }
+
+  .stage{
+    position:relative;
+    width:min(72vw, 400px);
+    aspect-ratio:1/1;
+    margin:6px 0;
+  }
+
+  svg{width:100%;height:100%;display:block;overflow:visible;}
+
+  .disc-inner{
+    cursor:grab;
+    transform-origin:250px 250px;
+    transition:transform 0.15s linear;
+  }
+  .disc-inner.dragging{
+    cursor:grabbing;
+    transition:none;
+  }
+
+  .letter-outer, .letter-inner{
+    font-family:'Courier Prime', monospace;
+    font-weight:700;
+    fill:var(--ink);
+    text-anchor:middle;
+    dominant-baseline:middle;
+    user-select:none;
+  }
+  .letter-inner{ fill:var(--ink); }
+
+  .pointer-tick{
+    fill:var(--red);
+    stroke:none;
+  }
+
+  .center-hub{
+    fill:var(--ink);
+  }
+  .center-hub-inner{
+    fill:var(--paper-dark);
+  }
+
+  .controls{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin-top:10px;
+  }
+  .shift-badge{
+    font-family:'Courier Prime', monospace;
+    font-weight:700;
+    font-size:15px;
+    color:var(--ink);
+    border:1px solid var(--ink);
+    padding:7px 14px;
+    min-width:130px;
+    text-align:center;
+    background:var(--paper-dark);
+  }
+  .nudge{
+    width:34px;
+    height:34px;
+    border-radius:0;
+    border:1px solid var(--ink);
+    background:var(--paper-dark);
+    color:var(--ink);
+    font-size:17px;
+    font-family:'Courier Prime', monospace;
+    cursor:pointer;
+  }
+  .nudge:hover{ background:var(--ink); color:var(--paper); }
+  .nudge:active{ transform:translateY(1px); }
+
+  .hint{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-top:12px;
+    text-align:center;
+  }
+
+  .mode-row{
+    display:flex;
+    border:1px solid var(--ink);
+    margin-bottom:20px;
+  }
+  .mode-btn{
+    flex:1;
+    padding:10px 0;
+    background:var(--paper);
+    border:none;
+    border-right:1px solid var(--ink);
+    color:var(--ink-soft);
+    font-family:'Courier Prime', monospace;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .mode-btn:last-child{ border-right:none; }
+  .mode-btn.active{
+    background:var(--ink);
+    color:var(--paper);
+  }
+
+  .field{ margin-bottom:20px; }
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:5px;
+  }
+  label::before{
+    content:"— ";
+  }
+
+  textarea{
+    width:100%;
+    min-height:84px;
+    resize:vertical;
+    background:var(--paper);
+    color:var(--ink);
+    border:1px solid var(--ink);
+    border-radius:0;
+    padding:10px 12px;
+    font-family:'Courier Prime', monospace;
+    font-size:16px;
+    line-height:1.45;
+    outline:none;
+  }
+  textarea:focus{ border-color:var(--red); }
+
+  .output-box{
+    width:100%;
+    min-height:84px;
+    background:var(--paper-dark);
+    border:1px solid var(--ink);
+    padding:10px 12px;
+    font-family:'Courier Prime', monospace;
+    font-size:16px;
+    line-height:1.45;
+    color:var(--red);
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+
+  .footnote{
+    margin-top:10px;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .disc-inner{ transition:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <div class="letterhead">
+    <h1>Roda Sandi Caesar</h1>
+    <div class="ref">No. seri: C-26<br>Instrumen putar manual</div>
+  </div>
+
+  <p class="intro">
+    Putar cakram bagian dalam sampai barisnya sejajar dengan huruf yang dicari.
+    Pergeseran itulah kunci sandinya.
+    <span class="stamp">LATIHAN</span>
+  </p>
+
+  <div class="stage-wrap">
+    <div class="stage">
+      <svg viewBox="0 0 500 500">
+        <g class="disc-outer" id="outerDisc"></g>
+        <g class="disc-inner" id="innerDisc"></g>
+        <polygon class="pointer-tick" points="250,18 240,44 260,44"></polygon>
+        <circle class="center-hub" cx="250" cy="250" r="24"></circle>
+        <circle class="center-hub-inner" cx="250" cy="250" r="14"></circle>
+      </svg>
+    </div>
+
+    <div class="controls">
+      <button class="nudge" id="nudgeLeft" aria-label="Kurangi pergeseran">&#8249;</button>
+      <div class="shift-badge" id="shiftBadge">geser: 0</div>
+      <button class="nudge" id="nudgeRight" aria-label="Tambah pergeseran">&#8250;</button>
+    </div>
+    <p class="hint">seret cakram dengan mouse atau jari untuk memutar</p>
+  </div>
+
+  <div class="mode-row">
+    <button class="mode-btn active" data-mode="encode">Sandikan</button>
+    <button class="mode-btn" data-mode="decode">Pecahkan</button>
+  </div>
+
+  <div class="field">
+    <label for="inputText">teks asli</label>
+    <textarea id="inputText" placeholder="Ketik pesan di sini...">SELAMAT DATANG DI YOGYAKARTA</textarea>
+  </div>
+
+  <div class="field">
+    <label id="outputLabel">hasil sandi</label>
+    <div class="output-box" id="outputText"></div>
+    <p class="footnote" id="footnote"></p>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const N = 26;
+  const R_OUTER = 240;
+  const R_OUTER_LETTERS = 205;
+  const R_INNER = 175;
+  const R_INNER_LETTERS = 140;
+  const CX = 250, CY = 250;
+
+  const outerDisc = document.getElementById('outerDisc');
+  const innerDisc = document.getElementById('innerDisc');
+
+  let outerRing = `<circle cx="${CX}" cy="${CY}" r="${R_OUTER}" fill="var(--paper-dark)" stroke="var(--ink)" stroke-width="2"></circle>`;
+  outerRing += `<circle cx="${CX}" cy="${CY}" r="${R_INNER+18}" fill="none" stroke="var(--ink)" stroke-width="1"></circle>`;
+  for(let i=0;i<N;i++){
+    const angle = (i / N) * 2 * Math.PI - Math.PI/2;
+    const x = CX + R_OUTER_LETTERS * Math.cos(angle);
+    const y = CY + R_OUTER_LETTERS * Math.sin(angle);
+    outerRing += `<text class="letter-outer" x="${x.toFixed(2)}" y="${y.toFixed(2)}" font-size="20">${ALPHA[i]}</text>`;
+    const x1 = CX + R_OUTER * Math.cos(angle);
+    const y1 = CY + R_OUTER * Math.sin(angle);
+    const x2 = CX + (R_OUTER-10) * Math.cos(angle);
+    const y2 = CY + (R_OUTER-10) * Math.sin(angle);
+    outerRing += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="var(--ink)" stroke-width="1"></line>`;
+  }
+  outerDisc.innerHTML = outerRing;
+
+  let innerRing = `<circle cx="${CX}" cy="${CY}" r="${R_INNER}" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"></circle>`;
+  innerRing += `<circle cx="${CX}" cy="${CY}" r="${R_INNER-58}" fill="var(--ink)" stroke="var(--ink)" stroke-width="1"></circle>`;
+  for(let i=0;i<N;i++){
+    const angle = (i / N) * 2 * Math.PI - Math.PI/2;
+    const x = CX + R_INNER_LETTERS * Math.cos(angle);
+    const y = CY + R_INNER_LETTERS * Math.sin(angle);
+    innerRing += `<text class="letter-inner" x="${x.toFixed(2)}" y="${y.toFixed(2)}" font-size="18" fill="var(--ink)">${ALPHA[i]}</text>`;
+  }
+  for(let i=0;i<52;i++){
+    const angle = (i/52) * 2 * Math.PI;
+    const x1 = CX + R_INNER * Math.cos(angle);
+    const y1 = CY + R_INNER * Math.sin(angle);
+    const x2 = CX + (R_INNER-6) * Math.cos(angle);
+    const y2 = CY + (R_INNER-6) * Math.sin(angle);
+    innerRing += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="var(--ink)" stroke-width="1.5"></line>`;
+  }
+  innerDisc.innerHTML = innerRing;
+
+  const degPerLetter = 360 / N;
+  let shift = 0;
+  let rotationDeg = 0;
+
+  const shiftBadge = document.getElementById('shiftBadge');
+  const innerDiscEl = document.getElementById('innerDisc');
+
+  function applyRotation(deg, animate){
+    innerDiscEl.style.transition = animate ? '' : 'none';
+    innerDiscEl.style.transform = `rotate(${deg}deg)`;
+  }
+
+  function setShift(newShift, animate){
+    shift = ((newShift % N) + N) % N;
+    rotationDeg = shift * degPerLetter;
+    applyRotation(rotationDeg, animate !== false);
+    shiftBadge.textContent = `geser: ${shift}`;
+    updateOutput();
+  }
+
+  let dragging = false;
+  let dragStartAngle = 0;
+  let rotationAtDragStart = 0;
+
+  function getAngleFromEvent(evt){
+    const svg = innerDiscEl.ownerSVGElement;
+    const pt = svg.createSVGPoint();
+    const point = evt.touches ? evt.touches[0] : evt;
+    pt.x = point.clientX;
+    pt.y = point.clientY;
+    const ctm = svg.getScreenCTM().inverse();
+    const loc = pt.matrixTransform(ctm);
+    const dx = loc.x - CX;
+    const dy = loc.y - CY;
+    return Math.atan2(dy, dx) * 180 / Math.PI;
+  }
+
+  function startDrag(evt){
+    dragging = true;
+    innerDiscEl.classList.add('dragging');
+    dragStartAngle = getAngleFromEvent(evt);
+    rotationAtDragStart = rotationDeg;
+    evt.preventDefault();
+  }
+
+  function moveDrag(evt){
+    if(!dragging) return;
+    const currentAngle = getAngleFromEvent(evt);
+    let delta = currentAngle - dragStartAngle;
+    rotationDeg = rotationAtDragStart + delta;
+    applyRotation(rotationDeg, false);
+    evt.preventDefault();
+  }
+
+  function endDrag(){
+    if(!dragging) return;
+    dragging = false;
+    innerDiscEl.classList.remove('dragging');
+    const snappedShift = Math.round(rotationDeg / degPerLetter);
+    setShift(snappedShift, true);
+  }
+
+  innerDiscEl.addEventListener('mousedown', startDrag);
+  window.addEventListener('mousemove', moveDrag);
+  window.addEventListener('mouseup', endDrag);
+  innerDiscEl.addEventListener('touchstart', startDrag, {passive:false});
+  window.addEventListener('touchmove', moveDrag, {passive:false});
+  window.addEventListener('touchend', endDrag);
+
+  document.getElementById('nudgeLeft').addEventListener('click', ()=> setShift(shift - 1, true));
+  document.getElementById('nudgeRight').addEventListener('click', ()=> setShift(shift + 1, true));
+
+  let mode = 'encode';
+  const modeButtons = document.querySelectorAll('.mode-btn');
+  const outputLabel = document.getElementById('outputLabel');
+  const footnote = document.getElementById('footnote');
+  const inputText = document.getElementById('inputText');
+  const outputText = document.getElementById('outputText');
+
+  modeButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      modeButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      outputLabel.textContent = mode === 'encode' ? 'hasil sandi' : 'hasil terpecahkan';
+      updateOutput();
+    });
+  });
+
+  function caesarShift(text, s){
+    return text.replace(/[a-zA-Z]/g, ch => {
+      const isUpper = ch === ch.toUpperCase();
+      const base = isUpper ? 65 : 97;
+      const code = ch.charCodeAt(0) - base;
+      const shifted = ((code + s) % 26 + 26) % 26;
+      return String.fromCharCode(shifted + base);
+    });
+  }
+
+  function updateOutput(){
+    const text = inputText.value;
+    const s = mode === 'encode' ? shift : -shift;
+    const result = caesarShift(text, s);
+    outputText.textContent = result || ' ';
+    footnote.textContent = mode === 'encode'
+      ? `setiap huruf digeser maju ${shift} posisi.`
+      : `setiap huruf digeser mundur ${shift} posisi untuk mengembalikan pesan.`;
+  }
+
+  inputText.addEventListener('input', updateOutput);
+
+  setShift(0, false);
+})();
+</script>
+</body>
+</html>
