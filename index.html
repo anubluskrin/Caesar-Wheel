@@ -309,6 +309,7 @@
   let audioCtx = null;
   function getAudioCtx(){
     if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
   }
   function playTick(strength = 1){
@@ -400,6 +401,7 @@
 
   function startDrag(evt){
   dragging = true;
+  getAudioCtx(); 
   innerDiscEl.classList.add('dragging');
   dragStartAngle = getAngleFromEvent(evt);
   rotationAtDragStart = rotationDeg;
