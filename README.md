@@ -21,7 +21,7 @@ An interactive web tool for encrypting and decrypting messages with the Caesar C
 
 ## Run locally
 
-No dependencies or build step — just open the file:
+No dependencies or build step just open the file:
 
 ```bash
 index.html
@@ -38,7 +38,7 @@ decrypt:  P = (C - n) mod 26
 
 ## Tech
 
-HTML, SVG, CSS, vanilla JavaScript — no frameworks or libraries.
+HTML, SVG, CSS, vanilla JavaScript, no frameworks or libraries.
 
 ## License
 
