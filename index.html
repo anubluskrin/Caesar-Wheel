@@ -385,24 +385,25 @@
   let dragStartAngle = 0;
   let rotationAtDragStart = 0;
   let lastBoundaryIndex = 0;
+  let chacedCTMInverse = null;
 
-  function getAngleFromEvent(evt){
-    const svg = innerDiscEl.ownerSVGElement;
-    const pt = svg.createSVGPoint();
-    const point = evt.touches ? evt.touches[0] : evt;
-    pt.x = point.clientX;
-    pt.y = point.clientY;
-    const ctm = svg.getScreenCTM().inverse();
-    const loc = pt.matrixTransform(ctm);
-    const dx = loc.x - CX;
-    const dy = loc.y - CY;
-    return Math.atan2(dy, dx) * 180 / Math.PI;
-  }
+  function getAngleFromEvent(evt, ctmInverse){
+  const svg = innerDiscEl.ownerSVGElement;
+  const pt = svg.createSVGPoint();
+  const point = evt.touches ? evt.touches[0] : evt;
+  pt.x = point.clientX;
+  pt.y = point.clientY;
+  const loc = pt.matrixTransform(ctmInverse || svg.getScreenCTM().inverse());
+  const dx = loc.x - CX;
+  const dy = loc.y - CY;
+  return Math.atan2(dy, dx) * 180 / Math.PI;
+}
 
   function startDrag(evt){
   dragging = true;
   getAudioCtx(); 
   innerDiscEl.classList.add('dragging');
+  cachedCtmInverse = innerDiscEl.ownerSVGElement.getScreenCTM().inverse();
   dragStartAngle = getAngleFromEvent(evt);
   rotationAtDragStart = rotationDeg;
   lastBoundaryIndex = Math.round(rotationDeg / degPerLetter);
@@ -411,7 +412,7 @@
 
   function moveDrag(evt){
   if(!dragging) return;
-  const currentAngle = getAngleFromEvent(evt);
+  const currentAngle = getAngleFromEvent(evt, cachedCtmInverse);
   let delta = currentAngle - dragStartAngle;
   rotationDeg = rotationAtDragStart + delta;
   applyRotation(rotationDeg, false);
