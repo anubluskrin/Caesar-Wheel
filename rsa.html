@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSA</title>
+<link rel="stylesheet" href="/shared/theme.css">
+<style>
+  .key-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 16px;
+    font-size:14px;
+    margin-top:10px;
+  }
+  .key-grid div{ word-break:break-all; }
+  .key-grid b{ color:var(--ink-soft); font-weight:700; }
+  .bit-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .bit-row input[type="range"]{ flex:1; }
+  .bit-row span{ font-weight:700; min-width:52px; text-align:right; }
+  .gen-btn{
+    padding:9px 16px; border:1px solid var(--ink); background:var(--paper-dark);
+    font-family:'Courier Prime', monospace; font-weight:700; cursor:pointer;
+  }
+  .gen-btn:hover{ background:var(--ink); color:var(--paper); }
+  .warn{ color:var(--red); font-size:13px; margin-top:8px; }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <div id="nav-slot"></div>
+
+  <div class="letterhead">
+    <h1>RSA</h1>
+    <div class="ref">No. seri: R-2048<br>Kunci publik & privat</div>
+  </div>
+
+  <p class="footnote" style="margin-bottom:16px;">
+    RSA asli (tanpa padding, untuk edukasi). Ukuran bit kecil = cepat & mudah diikuti
+    prosesnya, tapi tidak aman untuk data sungguhan.
+  </p>
+
+  <div class="field">
+    <label>panjang bit tiap prima (p, q)</label>
+    <div class="bit-row">
+      <input type="range" id="bitSlider" min="8" max="64" step="8" value="16">
+      <span id="bitValue">16 bit</span>
+    </div>
+    <button class="gen-btn" id="generateBtn">Generate Kunci Baru</button>
+  </div>
+
+  <div class="field">
+    <label>kunci yang dihasilkan</label>
+    <div class="key-grid" id="keyGrid"></div>
+  </div>
+
+  <div class="mode-row">
+    <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
+    <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+  </div>
+
+  <div class="field">
+    <label id="inputLabel" for="inputText">teks asli</label>
+    <textarea id="inputText">HI RSA</textarea>
+  </div>
+
+  <div class="field">
+    <label id="outputLabel">hasil (blok angka)</label>
+    <div class="output-box" id="outputText"></div>
+    <p class="warn" id="warnBox"></p>
+  </div>
+
+  <div class="process-panel">
+    <label>proses tiap karakter</label>
+    <div id="processLogContainer"></div>
+  </div>
+</div>
+
+<script src="/shared/nav.js"></script>
+<script src="/shared/process-log.js"></script>
+<script src="/shared/bigint-utils.js"></script>
+<script src="/ciphers/rsa.js"></script>
+<script>
+  let keys = null;
+  let mode = 'encrypt';
+
+  const bitSlider = document.getElementById('bitSlider');
+  const bitValue = document.getElementById('bitValue');
+  const generateBtn = document.getElementById('generateBtn');
+  const keyGrid = document.getElementById('keyGrid');
+  const modeButtons = document.querySelectorAll('.mode-btn');
+  const inputText = document.getElementById('inputText');
+  const inputLabel = document.getElementById('inputLabel');
+  const outputText = document.getElementById('outputText');
+  const outputLabel = document.getElementById('outputLabel');
+  const warnBox = document.getElementById('warnBox');
+
+  bitSlider.addEventListener('input', ()=> bitValue.textContent = `${bitSlider.value} bit`);
+
+  function renderKeys(){
+    keyGrid.innerHTML = `
+      <div><b>p</b> = ${keys.p}</div>
+      <div><b>q</b> = ${keys.q}</div>
+      <div><b>n</b> = ${keys.n}</div>
+      <div><b>φ(n)</b> = ${keys.phi}</div>
+      <div><b>e (publik)</b> = ${keys.e}</div>
+      <div><b>d (privat)</b> = ${keys.d}</div>
+    `;
+  }
+
+  function generateKeys(){
+    generateBtn.textContent = 'Menghitung...';
+    generateBtn.disabled = true;
+    setTimeout(()=>{
+      keys = generateRSAKeys(Number(bitSlider.value));
+      renderKeys();
+      generateBtn.textContent = 'Generate Kunci Baru';
+      generateBtn.disabled = false;
+      update();
+    }, 10);
+  }
+
+  const encryptColumns = [
+    { key: 'char', label: 'Karakter' },
+    { key: 'M', label: 'M (kode ASCII)' },
+    { key: 'formula', label: 'Formula' },
+    { key: 'C', label: 'C (hasil)' }
+  ];
+  const decryptColumns = [
+    { key: 'C', label: 'C (blok)' },
+    { key: 'formula', label: 'Formula' },
+    { key: 'M', label: 'M (kode ASCII)' },
+    { key: 'char', label: 'Karakter' }
+  ];
+
+  function update(){
+    if(!keys) return;
+    warnBox.textContent = '';
+    try{
+      const { result, steps } = rsaProcess(inputText.value, keys, mode);
+      outputText.textContent = result || ' ';
+      renderProcessLog('processLogContainer', mode === 'encrypt' ? encryptColumns : decryptColumns, steps);
+    }catch(err){
+      warnBox.textContent = err.message;
+      outputText.textContent = ' ';
+      renderProcessLog('processLogContainer', [], []);
+    }
+  }
+
+  modeButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      modeButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'blok angka (pisah spasi)';
+      outputLabel.textContent = mode === 'encrypt' ? 'hasil (blok angka)' : 'hasil (teks asli)';
+      if(mode === 'encrypt'){
+        inputText.value = 'HI RSA';
+      } else if(keys){
+        inputText.value = rsaProcess('HI RSA', keys, 'encrypt').result;
+      }
+      update();
+    });
+  });
+
+  generateBtn.addEventListener('click', generateKeys);
+  inputText.addEventListener('input', update);
+
+  generateKeys(); // generate kunci awal saat halaman dibuka
+</script>
+</body>
+</html>
