@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Enkripsi</title>
+<link rel="stylesheet" href="/shared/theme.css">
+<style>
+  .key-mode-row{
+    display:flex; gap:20px; margin-bottom:16px; font-size:14px;
+  }
+  .key-mode-row label{ display:flex; align-items:center; gap:6px; margin:0; color:var(--ink); cursor:pointer; }
+  .key-mode-row label::before{ content:''; }
+  .separate-keys{ display:none; gap:12px; }
+  .separate-keys.active{ display:grid; grid-template-columns:1fr 1fr; }
+  .rsa-mini{
+    font-size:13px; color:var(--ink-soft); margin-top:8px; word-break:break-all;
+  }
+  .stage-list{ list-style:none; padding:0; margin:10px 0 0; }
+  .stage-list li{
+    border:1px solid var(--line); padding:8px 10px; margin-bottom:6px; font-size:14px;
+  }
+  .stage-list b{ display:block; color:var(--ink-soft); font-size:12px; margin-bottom:3px; }
+  .stage-list .val{ word-break:break-all; color:var(--red); }
+  .gen-btn{
+    padding:9px 16px; border:1px solid var(--ink); background:var(--paper-dark);
+    font-family:'Courier Prime', monospace; font-weight:700; cursor:pointer; margin-top:6px;
+  }
+  .gen-btn:hover{ background:var(--ink); color:var(--paper); }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <div id="nav-slot"></div>
+
+  <div class="letterhead">
+    <h1>Super Enkripsi</h1>
+    <div class="ref">No. seri: S-04<br>Caesar → Vigenère → XOR → RSA</div>
+  </div>
+
+  <p class="footnote" style="margin-bottom:20px;">
+    Pesan dienkripsi berlapis melalui keempat algoritma secara berurutan. Dekripsi
+    otomatis membalik urutannya.
+  </p>
+
+  <div class="field">
+    <label>mode kunci</label>
+    <div class="key-mode-row">
+      <label><input type="radio" name="keyMode" value="shared" checked> Kunci Sama untuk Semua Tahap</label>
+      <label><input type="radio" name="keyMode" value="separate"> Kunci Berbeda per Tahap</label>
+    </div>
+
+    <div id="sharedKeyField">
+      <input type="text" id="sharedKey" value="RAHASIA">
+    </div>
+
+    <div class="separate-keys" id="separateKeyFields">
+      <div>
+        <label for="caesarKey" style="font-size:12px;">geser Caesar (angka)</label>
+        <input type="number" id="caesarKey" value="3" min="0" max="25">
+      </div>
+      <div>
+        <label for="vigenereKey" style="font-size:12px;">kunci Vigenère</label>
+        <input type="text" id="vigenereKey" value="KUNCI">
+      </div>
+      <div style="grid-column:1 / -1;">
+        <label for="xorKey" style="font-size:12px;">kunci XOR</label>
+        <input type="text" id="xorKey" value="STREAM">
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>kunci RSA (tahap terakhir, selalu terpisah)</label>
+    <div class="bit-row" style="display:flex; align-items:center; gap:10px;">
+      <input type="range" id="bitSlider" min="8" max="64" step="8" value="16" style="flex:1;">
+      <span id="bitValue" style="font-weight:700;">16 bit</span>
+    </div>
+    <button class="gen-btn" id="generateBtn">Generate Kunci RSA</button>
+    <div class="rsa-mini" id="rsaMini"></div>
+  </div>
+
+  <div class="mode-row">
+    <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
+    <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+  </div>
+
+  <div class="field">
+    <label id="inputLabel" for="inputText">teks asli</label>
+    <textarea id="inputText">SELAMAT DATANG</textarea>
+  </div>
+
+  <div class="field">
+    <label>hasil per tahap</label>
+    <ul class="stage-list" id="stageList"></ul>
+  </div>
+</div>
+
+<script src="/shared/nav.js"></script>
+<script src="/shared/bigint-utils.js"></script>
+<script src="/ciphers/caesar.js"></script>
+<script src="/ciphers/vigenere.js"></script>
+<script src="/ciphers/xor.js"></script>
+<script src="/ciphers/rsa.js"></script>
+<script src="/ciphers/super.js"></script>
+<script>
+  let rsaKeys = null;
+  let mode = 'encrypt';
+
+  const keyModeRadios = document.querySelectorAll('input[name="keyMode"]');
+  const sharedKeyField = document.getElementById('sharedKeyField');
+  const separateKeyFields = document.getElementById('separateKeyFields');
+  const sharedKey = document.getElementById('sharedKey');
+  const caesarKey = document.getElementById('caesarKey');
+  const vigenereKey = document.getElementById('vigenereKey');
+  const xorKey = document.getElementById('xorKey');
+
+  const bitSlider = document.getElementById('bitSlider');
+  const bitValue = document.getElementById('bitValue');
+  const generateBtn = document.getElementById('generateBtn');
+  const rsaMini = document.getElementById('rsaMini');
+
+  const modeButtons = document.querySelectorAll('.mode-btn');
+  const inputText = document.getElementById('inputText');
+  const inputLabel = document.getElementById('inputLabel');
+  const stageList = document.getElementById('stageList');
+
+  bitSlider.addEventListener('input', ()=> bitValue.textContent = `${bitSlider.value} bit`);
+
+  keyModeRadios.forEach(r => r.addEventListener('change', ()=>{
+    const isShared = document.querySelector('input[name="keyMode"]:checked').value === 'shared';
+    sharedKeyField.style.display = isShared ? 'block' : 'none';
+    separateKeyFields.classList.toggle('active', !isShared);
+    update();
+  }));
+
+  function getKeyConfig(){
+    return {
+      mode: document.querySelector('input[name="keyMode"]:checked').value,
+      shared: sharedKey.value,
+      caesar: caesarKey.value,
+      vigenere: vigenereKey.value,
+      xor: xorKey.value
+    };
+  }
+
+  function generateKeys(){
+    generateBtn.textContent = 'Menghitung...';
+    generateBtn.disabled = true;
+    setTimeout(()=>{
+      rsaKeys = generateRSAKeys(Number(bitSlider.value));
+      rsaMini.textContent = `n = ${rsaKeys.n} | e = ${rsaKeys.e} | d = ${rsaKeys.d}`;
+      generateBtn.textContent = 'Generate Kunci RSA';
+      generateBtn.disabled = false;
+      update();
+    }, 10);
+  }
+
+  function renderStages(stages){
+    stageList.innerHTML = stages.map(s => `
+      <li><b>${s.label}</b><span class="val">${s.value || ' '}</span></li>
+    `).join('');
+  }
+
+  function update(){
+    if(!rsaKeys) return;
+    const keyConfig = getKeyConfig();
+    try{
+      const out = mode === 'encrypt'
+        ? runSuperEncrypt(inputText.value, keyConfig, rsaKeys)
+        : runSuperDecrypt(inputText.value, keyConfig, rsaKeys);
+      renderStages(out.stages);
+    }catch(err){
+      stageList.innerHTML = `<li><b>Error</b><span class="val">${err.message}</span></li>`;
+    }
+  }
+
+  modeButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      modeButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'blok angka cipher (dari hasil Sandikan)';
+      if(mode === 'encrypt'){
+        inputText.value = 'SELAMAT DATANG';
+      } else if(rsaKeys){
+        inputText.value = runSuperEncrypt('SELAMAT DATANG', getKeyConfig(), rsaKeys).result;
+      }
+      update();
+    });
+  });
+
+  [sharedKey, caesarKey, vigenereKey, xorKey, inputText].forEach(el =>
+    el.addEventListener('input', update)
+  );
+
+  generateBtn.addEventListener('click', generateKeys);
+
+  generateKeys();
+</script>
+</body>
+</html>
