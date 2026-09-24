@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="/shared/theme.css">
 </head>
 <body>
-
-<div class="sheet">
+<body>
+  <div class="sheet">
   <div id="nav-slot"></div>
 
   <div class="letterhead">
@@ -16,38 +16,46 @@
     <div class="ref">No. seri: V-26<br>Sandi kunci-berulang</div>
   </div>
 
-  <p class="footnote" style="margin-bottom:20px;">
+  <p class="footnote" style="margin-bottom:24px;">
     Setiap huruf pesan digeser sebesar posisi huruf kunci yang bersesuaian —
     kunci diulang sepanjang pesan.
   </p>
 
-    <div class="grid-2">
-    <div class="field" style="margin-bottom:0;">
-      <label for="keyInput">kata kunci</label>
-      <input type="text" id="keyInput" value="RAHASIA">
+  <div class="bento-grid">
+
+    <!-- PANEL KIRI: input & kontrol -->
+    <div class="bento-panel">
+      <div class="mode-row" style="margin-bottom:0;">
+        <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
+        <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+      </div>
+
+      <div class="field">
+        <label for="keyInput">kata kunci</label>
+        <input type="text" id="keyInput" value="RAHASIA">
+      </div>
+
+      <div class="field">
+        <label for="inputText">teks asli</label>
+        <textarea id="inputText" style="min-height:160px;">SELAMAT DATANG DI YOGYAKARTA</textarea>
+      </div>
+
+      <button class="run-btn" id="runBtn">Jalankan Proses ▶</button>
     </div>
-    <div class="mode-row" style="margin-bottom:0;">
-      <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
-      <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+
+    <!-- PANEL KANAN: log proses & hasil -->
+    <div class="bento-panel">
+      <div class="field">
+        <label>proses tiap huruf</label>
+        <div id="processLogContainer" class="terminal-log" style="min-height:220px;"></div>
+      </div>
+
+      <div class="field">
+        <label id="outputLabel">hasil sandi</label>
+        <div class="output-box" id="outputText"></div>
+      </div>
     </div>
-  </div>
-  <div style="height:22px;"></div>
 
-  <div class="field">
-    <label for="inputText">teks asli</label>
-    <textarea id="inputText">SELAMAT DATANG DI YOGYAKARTA</textarea>
-  </div>
-
-  <button class="run-btn" id="runBtn">Jalankan Proses ></button>
-
-  <div class="field">
-    <label id="outputLabel">hasil sandi</label>
-    <div class="output-box" id="outputText"></div>
-  </div>
-
-  <div class="process-panel">
-    <label>proses tiap huruf</label>
-    <div id="processLogContainer"></div>
   </div>
 </div>
 

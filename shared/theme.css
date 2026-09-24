@@ -241,3 +241,25 @@ textarea:focus, input:focus{
     align-items:start;
   }
 }
+.bento-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:24px;
+  align-items:start;
+}
+@media (min-width: 860px){
+  .bento-grid{
+    grid-template-columns:1fr 1fr;
+    gap:28px;
+  }
+}
+.bento-panel{
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+.bento-panel .field{ margin-bottom:0; }
+
+@media (min-width: 860px){
+  .sheet{ max-width:1080px; }
+}
