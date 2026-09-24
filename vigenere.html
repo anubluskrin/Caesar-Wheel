@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vigenère Cipher</title>
+<link rel="stylesheet" href="/shared/theme.css">
+</head>
+<body>
+
+<div class="sheet">
+  <div id="nav-slot"></div>
+
+  <div class="letterhead">
+    <h1>Vigenère Cipher</h1>
+    <div class="ref">No. seri: V-26<br>Sandi kunci-berulang</div>
+  </div>
+
+  <p class="footnote" style="margin-bottom:20px;">
+    Setiap huruf pesan digeser sebesar posisi huruf kunci yang bersesuaian —
+    kunci diulang sepanjang pesan.
+  </p>
+
+  <div class="mode-row">
+    <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
+    <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+  </div>
+
+  <div class="field">
+    <label for="keyInput">kata kunci</label>
+    <input type="text" id="keyInput" value="RAHASIA">
+  </div>
+
+  <div class="field">
+    <label for="inputText">teks asli</label>
+    <textarea id="inputText">SELAMAT DATANG DI YOGYAKARTA</textarea>
+  </div>
+
+  <div class="field">
+    <label id="outputLabel">hasil sandi</label>
+    <div class="output-box" id="outputText"></div>
+  </div>
+
+  <div class="process-panel">
+    <label>proses tiap huruf</label>
+    <div id="processLogContainer"></div>
+  </div>
+</div>
+
+<script src="/shared/nav.js"></script>
+<script src="/shared/process-log.js"></script>
+<script src="/ciphers/vigenere.js"></script>
+<script>
+  let mode = 'encrypt';
+  const modeButtons = document.querySelectorAll('.mode-btn');
+  const keyInput = document.getElementById('keyInput');
+  const inputText = document.getElementById('inputText');
+  const outputText = document.getElementById('outputText');
+  const outputLabel = document.getElementById('outputLabel');
+
+  const columns = [
+    { key: 'char', label: 'Huruf' },
+    { key: 'keyChar', label: 'Kunci' },
+    { key: 'charCode', label: 'Posisi (P)' },
+    { key: 'keyCode', label: 'Posisi (K)' },
+    { key: 'shift', label: 'Geser' },
+    { key: 'resultChar', label: 'Hasil' }
+  ];
+
+  function update(){
+    const { result, steps } = vigenereProcess(inputText.value, keyInput.value, mode);
+    outputText.textContent = result || ' ';
+    outputLabel.textContent = mode === 'encrypt' ? 'hasil sandi' : 'hasil terpecahkan';
+    renderProcessLog('processLogContainer', columns, steps);
+  }
+
+  modeButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      modeButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      update();
+    });
+  });
+
+  keyInput.addEventListener('input', update);
+  inputText.addEventListener('input', update);
+
+  update();
+</script>
+</body>
+</html>
