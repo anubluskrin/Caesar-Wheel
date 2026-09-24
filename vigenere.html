@@ -21,15 +21,17 @@
     kunci diulang sepanjang pesan.
   </p>
 
-  <div class="mode-row">
-    <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
-    <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+    <div class="grid-2">
+    <div class="field" style="margin-bottom:0;">
+      <label for="keyInput">kata kunci</label>
+      <input type="text" id="keyInput" value="RAHASIA">
+    </div>
+    <div class="mode-row" style="margin-bottom:0;">
+      <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
+      <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+    </div>
   </div>
-
-  <div class="field">
-    <label for="keyInput">kata kunci</label>
-    <input type="text" id="keyInput" value="RAHASIA">
-  </div>
+  <div style="height:22px;"></div>
 
   <div class="field">
     <label for="inputText">teks asli</label>

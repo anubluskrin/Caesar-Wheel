@@ -32,12 +32,16 @@ body{
 
 .sheet{
   width:100%;
-  max-width:640px;
+  max-width:880px;
   background:var(--paper-dark);
   border:4px solid var(--ink);
   border-radius:0;
   box-shadow:var(--shadow);
   padding:32px 34px 38px;
+}
+
+@media (min-width: 860px){
+  .sheet{ max-width:960px; padding:44px 56px 52px; }
 }
 
 .letterhead{
@@ -224,3 +228,16 @@ textarea:focus, input:focus{
 }
 .run-btn:hover{ transform:translate(2px,2px); box-shadow:2px 2px 0 #000; }
 .run-btn:active{ transform:translate(4px,4px); box-shadow:0 0 0 #000; }
+
+.grid-2{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:0;
+}
+@media (min-width: 860px){
+  .grid-2{
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+    align-items:start;
+  }
+}
