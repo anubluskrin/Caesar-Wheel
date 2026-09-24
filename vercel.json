@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/vigenere", "destination": "/vigenere.html" },
+    { "source": "/rsa", "destination": "/rsa.html" },
+    { "source": "/xor", "destination": "/xor.html" },
+    { "source": "/super", "destination": "/super.html" }
+  ]
+}
