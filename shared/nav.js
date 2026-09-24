@@ -11,30 +11,37 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .cipher-nav{
-      display:flex;
-      border:1px solid var(--ink);
-      margin-bottom:24px;
-      font-family:'Courier Prime', monospace;
-      font-size:14px;
-      overflow-x:auto;
-    }
-    .cipher-nav a{
-      flex:1;
-      text-align:center;
-      padding:9px 6px;
-      color:var(--ink-soft);
-      text-decoration:none;
-      border-right:1px solid var(--ink);
-      white-space:nowrap;
-    }
-    .cipher-nav a:last-child{ border-right:none; }
-    .cipher-nav a.active{
-      background:var(--ink);
-      color:var(--paper);
-      font-weight:700;
-    }
-  `;
+  .cipher-nav{
+    display:flex;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:4px;
+    margin-bottom:24px;
+    font-family:-apple-system, 'Inter', sans-serif;
+    font-size:13px;
+    gap:4px;
+    overflow-x:auto;
+  }
+  .cipher-nav a{
+    flex:1;
+    text-align:center;
+    padding:8px 6px;
+    color:var(--ink-soft);
+    text-decoration:none;
+    border-right:none;
+    border-radius:9px;
+    font-weight:600;
+    white-space:nowrap;
+    transition:all .15s ease;
+  }
+  .cipher-nav a.active{
+    background:var(--paper-dark);
+    color:var(--ink);
+    box-shadow:0 1px 4px rgba(0,0,0,0.1);
+  }
+`;
+  
   document.head.appendChild(style);
 
   const nav = document.createElement('nav');
