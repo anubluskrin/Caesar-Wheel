@@ -1,12 +1,16 @@
+
+
+Index · HTML
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Caesar Wheel</title>
+<link rel="stylesheet" href="/shared/theme.css">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap');
-
+ 
   :root{
     --paper:#e3dcc4;
     --paper-dark:#d8cfae;
@@ -16,9 +20,9 @@
     --red-soft:#a8493a;
     --line:#8a8267;
   }
-
+ 
   *{box-sizing:border-box;}
-
+ 
   body{
     margin:0;
     min-height:100vh;
@@ -31,12 +35,12 @@
     justify-content:center;
     padding:40px 18px 70px;
   }
-
+ 
   .sheet{
     width:100%;
     max-width:660px;
   }
-
+ 
   .letterhead{
     display:flex;
     justify-content:space-between;
@@ -59,14 +63,14 @@
     line-height:1.6;
     white-space:nowrap;
   }
-
+ 
   .intro{
     font-size:16px;
     line-height:1.6;
     max-width:520px;
     margin:0 0 26px;
   }
-
+ 
   .stamp{
     display:inline-block;
     border:2px solid var(--red);
@@ -77,7 +81,7 @@
     transform:rotate(-3deg);
     margin-left:10px;
   }
-
+ 
   .stage-wrap{
     display:flex;
     flex-direction:column;
@@ -87,16 +91,16 @@
     border-bottom:1px solid var(--line);
     margin-bottom:24px;
   }
-
+ 
   .stage{
     position:relative;
     width:min(72vw, 400px);
     aspect-ratio:1/1;
     margin:6px 0;
   }
-
+ 
   svg{width:100%;height:100%;display:block;overflow:visible;}
-
+ 
   .disc-inner{
     cursor:grab;
     transform-origin:250px 250px;
@@ -106,7 +110,7 @@
     cursor:grabbing;
     transition:none;
   }
-
+ 
   .letter-outer, .letter-inner{
     font-family:'Courier Prime', monospace;
     font-weight:700;
@@ -116,19 +120,19 @@
     user-select:none;
   }
   .letter-inner{ fill:var(--ink); }
-
+ 
   .pointer-tick{
     fill:var(--red);
     stroke:none;
   }
-
+ 
   .center-hub{
     fill:var(--ink);
   }
   .center-hub-inner{
     fill:var(--paper-dark);
   }
-
+ 
   .controls{
     display:flex;
     align-items:center;
@@ -159,14 +163,14 @@
   }
   .nudge:hover{ background:var(--ink); color:var(--paper); }
   .nudge:active{ transform:translateY(1px); }
-
+ 
   .hint{
     font-size:13px;
     color:var(--ink-soft);
     margin-top:12px;
     text-align:center;
   }
-
+ 
   .mode-row{
     display:flex;
     border:1px solid var(--ink);
@@ -189,7 +193,7 @@
     background:var(--ink);
     color:var(--paper);
   }
-
+ 
   .field{ margin-bottom:20px; }
   label{
     display:block;
@@ -200,7 +204,7 @@
   label::before{
     content:"— ";
   }
-
+ 
   textarea{
     width:100%;
     min-height:84px;
@@ -216,7 +220,7 @@
     outline:none;
   }
   textarea:focus{ border-color:var(--red); }
-
+ 
   .output-box{
     width:100%;
     min-height:84px;
@@ -230,22 +234,23 @@
     white-space:pre-wrap;
     word-break:break-word;
   }
-
+ 
   .footnote{
     margin-top:10px;
     font-size:13px;
     color:var(--ink-soft);
   }
-
+ 
   @media (prefers-reduced-motion: reduce){
     .disc-inner{ transition:none; }
   }
 </style>
 </head>
 <body>
-
+ 
 <div class="sheet">
-
+  <div id="nav-slot"></div>
+ 
   <div class="letterhead">
     <h1>Caesar Cipher Wheel</h1>
     <div class="ref">
@@ -255,15 +260,14 @@
       </a>
       <br>
       <br>Support Dev
-      
     </div>
-</div>  <!-- ⬅️ TAMBAHKAN INI, penutup .letterhead -->
-
+  </div>
+ 
   <p class="intro">
     Putar cakram bagian dalam sampai barisnya sejajar dengan huruf yang dicari.
     <span class="stamp">LATIHAN</span>
   </p>
-
+ 
   <div class="stage-wrap">
     <div class="stage">
       <svg viewBox="0 0 500 500">
@@ -274,7 +278,7 @@
         <circle class="center-hub-inner" cx="250" cy="250" r="14"></circle>
       </svg>
     </div>
-
+ 
     <div class="controls">
       <button class="nudge" id="nudgeLeft" aria-label="Kurangi pergeseran">&#8249;</button>
       <div class="shift-badge" id="shiftBadge">geser: 0</div>
@@ -282,25 +286,26 @@
     </div>
     <p class="hint">seret cakram dengan mouse atau jari untuk memutar</p>
   </div>
-
+ 
   <div class="mode-row">
     <button class="mode-btn active" data-mode="encode">ENKRIPSI (Sandikan)</button>
     <button class="mode-btn" data-mode="decode">DEKRIPSI (Pecahkan)</button>
   </div>
-
+ 
   <div class="field">
     <label for="inputText">teks asli</label>
     <textarea id="inputText" placeholder="Ketik pesan di sini...">HEI ANTEK ANTEK ASING</textarea>
   </div>
-
+ 
   <div class="field">
     <label id="outputLabel">hasil sandi</label>
     <div class="output-box" id="outputText"></div>
     <p class="footnote" id="footnote"></p>
   </div>
-
+ 
 </div>
-
+ 
+<script src="/shared/nav.js"></script>
 <script>
 (function(){
   const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -310,7 +315,7 @@
   const R_INNER = 175;
   const R_INNER_LETTERS = 140;
   const CX = 250, CY = 250;
-
+ 
   // --- efek suara (Web Audio API, tanpa file eksternal) ---
   let audioCtx = null;
   function getAudioCtx(){
@@ -330,10 +335,10 @@
     osc.start();
     osc.stop(ctx.currentTime + 0.05);
   }
-
+ 
   const outerDisc = document.getElementById('outerDisc');
   const innerDisc = document.getElementById('innerDisc');
-
+ 
   let outerRing = `<circle cx="${CX}" cy="${CY}" r="${R_OUTER}" fill="var(--paper-dark)" stroke="var(--ink)" stroke-width="2"></circle>`;
   outerRing += `<circle cx="${CX}" cy="${CY}" r="${R_INNER+18}" fill="none" stroke="var(--ink)" stroke-width="1"></circle>`;
   for(let i=0;i<N;i++){
@@ -348,7 +353,7 @@
     outerRing += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="var(--ink)" stroke-width="1"></line>`;
   }
   outerDisc.innerHTML = outerRing;
-
+ 
   let innerRing = `<circle cx="${CX}" cy="${CY}" r="${R_INNER}" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"></circle>`;
   innerRing += `<circle cx="${CX}" cy="${CY}" r="${R_INNER-58}" fill="var(--ink)" stroke="var(--ink)" stroke-width="1"></circle>`;
   for(let i=0;i<N;i++){
@@ -366,19 +371,19 @@
     innerRing += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="var(--ink)" stroke-width="1.5"></line>`;
   }
   innerDisc.innerHTML = innerRing;
-
+ 
   const degPerLetter = 360 / N;
   let shift = 0;
   let rotationDeg = 0;
-
+ 
   const shiftBadge = document.getElementById('shiftBadge');
   const innerDiscEl = document.getElementById('innerDisc');
-
+ 
   function applyRotation(deg, animate){
     innerDiscEl.style.transition = animate ? '' : 'none';
     innerDiscEl.style.transform = `rotate(${deg}deg)`;
   }
-
+ 
   function setShift(newShift, animate){
     shift = ((newShift % N) + N) % N;
     rotationDeg = shift * degPerLetter;
@@ -386,56 +391,56 @@
     shiftBadge.textContent = `geser: ${shift}`;
     updateOutput();
   }
-
+ 
   let dragging = false;
   let dragStartAngle = 0;
   let rotationAtDragStart = 0;
   let lastBoundaryIndex = 0;
-  let chacedCtmInverse = null;
-
+  let cachedCtmInverse = null;
+ 
   function getAngleFromEvent(evt, ctmInverse){
-  const svg = innerDiscEl.ownerSVGElement;
-  const pt = svg.createSVGPoint();
-  const point = evt.touches ? evt.touches[0] : evt;
-  pt.x = point.clientX;
-  pt.y = point.clientY;
-  const loc = pt.matrixTransform(ctmInverse || svg.getScreenCTM().inverse());
-  const dx = loc.x - CX;
-  const dy = loc.y - CY;
-  return Math.atan2(dy, dx) * 180 / Math.PI;
-}
-
-  function startDrag(evt){
-  dragging = true;
-  getAudioCtx(); 
-  innerDiscEl.classList.add('dragging');
-  cachedCtmInverse = innerDiscEl.ownerSVGElement.getScreenCTM().inverse();
-  dragStartAngle = getAngleFromEvent(evt);
-  rotationAtDragStart = rotationDeg;
-  lastBoundaryIndex = Math.round(rotationDeg / degPerLetter);
-  evt.preventDefault();
-}
-
-  function moveDrag(evt){
-  if(!dragging) return;
-  const currentAngle = getAngleFromEvent(evt, cachedCtmInverse);
-  let delta = currentAngle - dragStartAngle;
-  rotationDeg = rotationAtDragStart + delta;
-  applyRotation(rotationDeg, false);
-
-  const currentBoundaryIndex = Math.round(rotationDeg / degPerLetter);
-  if(currentBoundaryIndex !== lastBoundaryIndex){
-    playTick();
-    lastBoundaryIndex = currentBoundaryIndex;
-
-    // update angka & hasil secara realtime, tanpa animasi/snap
-    shift = ((currentBoundaryIndex % N) + N) % N;
-    shiftBadge.textContent = `geser: ${shift}`;
-    updateOutput();
+    const svg = innerDiscEl.ownerSVGElement;
+    const pt = svg.createSVGPoint();
+    const point = evt.touches ? evt.touches[0] : evt;
+    pt.x = point.clientX;
+    pt.y = point.clientY;
+    const loc = pt.matrixTransform(ctmInverse || svg.getScreenCTM().inverse());
+    const dx = loc.x - CX;
+    const dy = loc.y - CY;
+    return Math.atan2(dy, dx) * 180 / Math.PI;
   }
-  evt.preventDefault();
-}
-
+ 
+  function startDrag(evt){
+    dragging = true;
+    getAudioCtx();
+    innerDiscEl.classList.add('dragging');
+    cachedCtmInverse = innerDiscEl.ownerSVGElement.getScreenCTM().inverse();
+    dragStartAngle = getAngleFromEvent(evt, cachedCtmInverse);
+    rotationAtDragStart = rotationDeg;
+    lastBoundaryIndex = Math.round(rotationDeg / degPerLetter);
+    evt.preventDefault();
+  }
+ 
+  function moveDrag(evt){
+    if(!dragging) return;
+    const currentAngle = getAngleFromEvent(evt, cachedCtmInverse);
+    let delta = currentAngle - dragStartAngle;
+    rotationDeg = rotationAtDragStart + delta;
+    applyRotation(rotationDeg, false);
+ 
+    const currentBoundaryIndex = Math.round(rotationDeg / degPerLetter);
+    if(currentBoundaryIndex !== lastBoundaryIndex){
+      playTick();
+      lastBoundaryIndex = currentBoundaryIndex;
+ 
+      // update angka & hasil secara realtime, tanpa animasi/snap
+      shift = ((currentBoundaryIndex % N) + N) % N;
+      shiftBadge.textContent = `geser: ${shift}`;
+      updateOutput();
+    }
+    evt.preventDefault();
+  }
+ 
   function endDrag(){
     if(!dragging) return;
     dragging = false;
@@ -443,24 +448,24 @@
     const snappedShift = Math.round(rotationDeg / degPerLetter);
     setShift(snappedShift, true);
   }
-
+ 
   innerDiscEl.addEventListener('mousedown', startDrag);
   window.addEventListener('mousemove', moveDrag);
   window.addEventListener('mouseup', endDrag);
   innerDiscEl.addEventListener('touchstart', startDrag, {passive:false});
   window.addEventListener('touchmove', moveDrag, {passive:false});
   window.addEventListener('touchend', endDrag);
-
+ 
   document.getElementById('nudgeLeft').addEventListener('click', ()=> { playTick(1.3); setShift(shift - 1, true); });
   document.getElementById('nudgeRight').addEventListener('click', ()=> { playTick(1.3); setShift(shift + 1, true); });
-
+ 
   let mode = 'encode';
   const modeButtons = document.querySelectorAll('.mode-btn');
   const outputLabel = document.getElementById('outputLabel');
   const footnote = document.getElementById('footnote');
   const inputText = document.getElementById('inputText');
   const outputText = document.getElementById('outputText');
-
+ 
   modeButtons.forEach(btn=>{
     btn.addEventListener('click', ()=>{
       modeButtons.forEach(b=>b.classList.remove('active'));
@@ -470,7 +475,7 @@
       updateOutput();
     });
   });
-
+ 
   function caesarShift(text, s){
     return text.replace(/[a-zA-Z]/g, ch => {
       const isUpper = ch === ch.toUpperCase();
@@ -480,7 +485,7 @@
       return String.fromCharCode(shifted + base);
     });
   }
-
+ 
   function updateOutput(){
     const text = inputText.value;
     const s = mode === 'encode' ? shift : -shift;
@@ -490,11 +495,12 @@
       ? `setiap huruf digeser maju ${shift} posisi.`
       : `setiap huruf digeser mundur ${shift} posisi untuk mengembalikan pesan.`;
   }
-
+ 
   inputText.addEventListener('input', updateOutput);
-
+ 
   setShift(0, false);
 })();
 </script>
 </body>
 </html>
+ 
