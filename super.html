@@ -29,6 +29,7 @@
   .gen-btn:hover{ background:var(--ink); color:var(--paper); }
 </style>
 </head>
+
 <body>
 
 <div class="sheet">
@@ -76,28 +77,39 @@
     <div class="bit-row" style="display:flex; align-items:center; gap:10px;">
       <input type="range" id="bitSlider" min="8" max="64" step="8" value="16" style="flex:1;">
       <span id="bitValue" style="font-weight:700;">16 bit</span>
+      <button class="gen-btn" id="generateBtn">Generate Kunci RSA</button>
     </div>
-    <button class="gen-btn" id="generateBtn">Generate Kunci RSA</button>
     <div class="rsa-mini" id="rsaMini"></div>
   </div>
 
-  <div class="mode-row">
-    <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
-    <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
-  </div>
+  <div class="bento-grid">
 
-  <div class="field">
-    <label id="inputLabel" for="inputText">teks asli</label>
-    <textarea id="inputText">SELAMAT DATANG</textarea>
-  </div>
+    <div class="bento-panel">
+      <div class="mode-row" style="margin-bottom:0;">
+        <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
+        <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+      </div>
 
-  <div class="field">
-    <label>hasil per tahap</label>
-    <ul class="stage-list" id="stageList"></ul>
+      <div class="field">
+        <label id="inputLabel" for="inputText">teks asli</label>
+        <textarea id="inputText" style="min-height:140px;">SELAMAT DATANG</textarea>
+      </div>
+
+      <button class="run-btn" id="runBtn">Jalankan Proses ▶</button>
+    </div>
+
+    <div class="bento-panel">
+      <div class="field">
+        <label>log tiap tahap</label>
+        <div id="processLogContainer" class="terminal-log" style="min-height:220px;"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <script src="/shared/nav.js"></script>
+<script src="/shared/process-log.js"></script>
 <script src="/shared/bigint-utils.js"></script>
 <script src="/ciphers/caesar.js"></script>
 <script src="/ciphers/vigenere.js"></script>
@@ -124,7 +136,7 @@
   const modeButtons = document.querySelectorAll('.mode-btn');
   const inputText = document.getElementById('inputText');
   const inputLabel = document.getElementById('inputLabel');
-  const stageList = document.getElementById('stageList');
+  const runBtn = document.getElementById('runBtn');
 
   bitSlider.addEventListener('input', ()=> bitValue.textContent = `${bitSlider.value} bit`);
 
@@ -132,7 +144,6 @@
     const isShared = document.querySelector('input[name="keyMode"]:checked').value === 'shared';
     sharedKeyField.style.display = isShared ? 'block' : 'none';
     separateKeyFields.classList.toggle('active', !isShared);
-    update();
   }));
 
   function getKeyConfig(){
@@ -153,27 +164,7 @@
       rsaMini.textContent = `n = ${rsaKeys.n} | e = ${rsaKeys.e} | d = ${rsaKeys.d}`;
       generateBtn.textContent = 'Generate Kunci RSA';
       generateBtn.disabled = false;
-      update();
     }, 10);
-  }
-
-  function renderStages(stages){
-    stageList.innerHTML = stages.map(s => `
-      <li><b>${s.label}</b><span class="val">${s.value || ' '}</span></li>
-    `).join('');
-  }
-
-  function update(){
-    if(!rsaKeys) return;
-    const keyConfig = getKeyConfig();
-    try{
-      const out = mode === 'encrypt'
-        ? runSuperEncrypt(inputText.value, keyConfig, rsaKeys)
-        : runSuperDecrypt(inputText.value, keyConfig, rsaKeys);
-      renderStages(out.stages);
-    }catch(err){
-      stageList.innerHTML = `<li><b>Error</b><span class="val">${err.message}</span></li>`;
-    }
   }
 
   modeButtons.forEach(btn=>{
@@ -187,16 +178,26 @@
       } else if(rsaKeys){
         inputText.value = runSuperEncrypt('SELAMAT DATANG', getKeyConfig(), rsaKeys).result;
       }
-      update();
     });
   });
 
-  [sharedKey, caesarKey, vigenereKey, xorKey, inputText].forEach(el =>
-    el.addEventListener('input', update)
-  );
+  runBtn.addEventListener('click', ()=>{
+    if(!rsaKeys) return;
+    const keyConfig = getKeyConfig();
+    runBtn.disabled = true;
+    try{
+      const out = mode === 'encrypt'
+        ? runSuperEncrypt(inputText.value, keyConfig, rsaKeys)
+        : runSuperDecrypt(inputText.value, keyConfig, rsaKeys);
+
+      const lines = out.stages.map(s => `${s.label}: ${s.value}`);
+      runTerminalLog('processLogContainer', lines, ()=>{ runBtn.disabled = false; }, 260);
+    }catch(err){
+      runTerminalLog('processLogContainer', [`ERROR: ${err.message}`], ()=>{ runBtn.disabled = false; });
+    }
+  });
 
   generateBtn.addEventListener('click', generateKeys);
-
   generateKeys();
 </script>
 </body>
