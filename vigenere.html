@@ -36,6 +36,8 @@
     <textarea id="inputText">SELAMAT DATANG DI YOGYAKARTA</textarea>
   </div>
 
+  <button class="run-btn" id="runBtn">Jalankan Proses ></button>
+
   <div class="field">
     <label id="outputLabel">hasil sandi</label>
     <div class="output-box" id="outputText"></div>
@@ -57,36 +59,23 @@
   const inputText = document.getElementById('inputText');
   const outputText = document.getElementById('outputText');
   const outputLabel = document.getElementById('outputLabel');
-
-  const columns = [
-    { key: 'char', label: 'Huruf' },
-    { key: 'keyChar', label: 'Kunci' },
-    { key: 'charCode', label: 'Posisi (P)' },
-    { key: 'keyCode', label: 'Posisi (K)' },
-    { key: 'shift', label: 'Geser' },
-    { key: 'resultChar', label: 'Hasil' }
-  ];
-
-  function update(){
-    const { result, steps } = vigenereProcess(inputText.value, keyInput.value, mode);
-    outputText.textContent = result || ' ';
-    outputLabel.textContent = mode === 'encrypt' ? 'hasil sandi' : 'hasil terpecahkan';
-    renderProcessLog('processLogContainer', columns, steps);
-  }
+  const runBtn = document.getElementById('runBtn');
 
   modeButtons.forEach(btn=>{
     btn.addEventListener('click', ()=>{
       modeButtons.forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       mode = btn.dataset.mode;
-      update();
+      outputLabel.textContent = mode === 'encrypt' ? 'hasil sandi' : 'hasil terpecahkan';
     });
   });
 
-  keyInput.addEventListener('input', update);
-  inputText.addEventListener('input', update);
-
-  update();
+  wireCipherRunner({
+    runBtn, outputText,
+    containerId: 'processLogContainer',
+    computeFn: () => vigenereProcess(inputText.value, keyInput.value, mode),
+    formatLine: s => `${s.char} (kunci=${s.keyChar})  P=${s.charCode} ${s.shift} → ${s.resultChar}`
+  });
 </script>
 </body>
 </html>

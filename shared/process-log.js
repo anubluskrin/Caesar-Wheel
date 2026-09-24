@@ -37,3 +37,18 @@ function runTerminalLog(containerId, lines, onDone, speed = 90){
   }
   nextLine();
 }
+
+// --- runner generik, dipakai semua halaman cipher ---
+function wireCipherRunner({ runBtn, outputText, containerId, computeFn, formatLine, speed = 90 }){
+  runBtn.addEventListener('click', ()=>{
+    outputText.textContent = ' ';
+    const { result, steps } = computeFn();
+    const lines = steps.map(formatLine);
+
+    runBtn.disabled = true;
+    runTerminalLog(containerId, lines, ()=>{
+      outputText.textContent = result || ' ';
+      runBtn.disabled = false;
+    }, speed);
+  });
+}
