@@ -16,34 +16,44 @@
     <div class="ref">No. seri: X-08<br>Operasi bit, kunci berulang</div>
   </div>
 
-  <p class="footnote" style="margin-bottom:20px;">
+  <p class="footnote" style="margin-bottom:24px;">
     Tiap byte pesan di-XOR dengan byte kunci yang berulang. Hasil enkripsi berupa hex
     (karena bisa jadi karakter tak tercetak); dekripsi menerima hex, mengembalikannya jadi teks.
   </p>
 
-  <div class="mode-row">
-    <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
-    <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
-  </div>
+  <div class="bento-grid">
 
-  <div class="field">
-    <label for="keyInput">kunci</label>
-    <input type="text" id="keyInput" value="RAHASIA">
-  </div>
+    <div class="bento-panel">
+      <div class="mode-row" style="margin-bottom:0;">
+        <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
+        <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+      </div>
 
-  <div class="field">
-    <label id="inputLabel" for="inputText">teks asli</label>
-    <textarea id="inputText">SELAMAT DATANG</textarea>
-  </div>
+      <div class="field">
+        <label for="keyInput">kunci</label>
+        <input type="text" id="keyInput" value="RAHASIA">
+      </div>
 
-  <div class="field">
-    <label id="outputLabel">hasil (hex)</label>
-    <div class="output-box" id="outputText"></div>
-  </div>
+      <div class="field">
+        <label id="inputLabel" for="inputText">teks asli</label>
+        <textarea id="inputText" style="min-height:160px;">SELAMAT DATANG</textarea>
+      </div>
 
-  <div class="process-panel">
-    <label>proses tiap byte (biner)</label>
-    <div id="processLogContainer"></div>
+      <button class="run-btn" id="runBtn">Jalankan Proses ▶</button>
+    </div>
+
+    <div class="bento-panel">
+      <div class="field">
+        <label>proses tiap byte (biner)</label>
+        <div id="processLogContainer" class="terminal-log" style="min-height:220px;"></div>
+      </div>
+
+      <div class="field">
+        <label id="outputLabel">hasil (hex)</label>
+        <div class="output-box" id="outputText"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -58,37 +68,29 @@
   const outputText = document.getElementById('outputText');
   const outputLabel = document.getElementById('outputLabel');
   const inputLabel = document.getElementById('inputLabel');
-
-  const columns = [
-    { key: 'index', label: '#' },
-    { key: 'inputByte', label: 'Input (biner)' },
-    { key: 'keyByte', label: 'Kunci (biner)' },
-    { key: 'resultByte', label: 'XOR (biner)' },
-    { key: 'resultHex', label: 'Hasil (hex)' }
-  ];
-
-  function update(){
-    const { result, steps } = xorProcess(inputText.value, keyInput.value, mode);
-    outputText.textContent = result || ' ';
-    outputLabel.textContent = mode === 'encrypt' ? 'hasil (hex)' : 'hasil (teks asli)';
-    inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'teks tersandi (hex)';
-    renderProcessLog('processLogContainer', columns, steps);
-  }
+  const runBtn = document.getElementById('runBtn');
 
   modeButtons.forEach(btn=>{
     btn.addEventListener('click', ()=>{
       modeButtons.forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       mode = btn.dataset.mode;
-      inputText.value = mode === 'encrypt' ? 'SELAMAT DATANG' : xorProcess('SELAMAT DATANG', keyInput.value, 'encrypt').result;
-      update();
+      outputLabel.textContent = mode === 'encrypt' ? 'hasil (hex)' : 'hasil (teks asli)';
+      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'teks tersandi (hex)';
+      inputText.value = mode === 'encrypt'
+        ? 'SELAMAT DATANG'
+        : xorProcess('SELAMAT DATANG', keyInput.value, 'encrypt').result;
+      outputText.textContent = ' ';
+      processLogContainer.innerHTML = '';
     });
   });
 
-  keyInput.addEventListener('input', update);
-  inputText.addEventListener('input', update);
-
-  update();
+  wireCipherRunner({
+    runBtn, outputText,
+    containerId: 'processLogContainer',
+    computeFn: () => xorProcess(inputText.value, keyInput.value, mode),
+    formatLine: s => `#${s.index} ${s.inputByte} XOR ${s.keyByte} = ${s.resultByte} (0x${s.resultHex})`
+  });
 </script>
 </body>
 </html>
