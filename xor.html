@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XOR Stream Cipher</title>
+<link rel="stylesheet" href="/shared/theme.css">
+</head>
+<body>
+
+<div class="sheet">
+  <div id="nav-slot"></div>
+
+  <div class="letterhead">
+    <h1>XOR Stream Cipher</h1>
+    <div class="ref">No. seri: X-08<br>Operasi bit, kunci berulang</div>
+  </div>
+
+  <p class="footnote" style="margin-bottom:20px;">
+    Tiap byte pesan di-XOR dengan byte kunci yang berulang. Hasil enkripsi berupa hex
+    (karena bisa jadi karakter tak tercetak); dekripsi menerima hex, mengembalikannya jadi teks.
+  </p>
+
+  <div class="mode-row">
+    <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
+    <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+  </div>
+
+  <div class="field">
+    <label for="keyInput">kunci</label>
+    <input type="text" id="keyInput" value="RAHASIA">
+  </div>
+
+  <div class="field">
+    <label id="inputLabel" for="inputText">teks asli</label>
+    <textarea id="inputText">SELAMAT DATANG</textarea>
+  </div>
+
+  <div class="field">
+    <label id="outputLabel">hasil (hex)</label>
+    <div class="output-box" id="outputText"></div>
+  </div>
+
+  <div class="process-panel">
+    <label>proses tiap byte (biner)</label>
+    <div id="processLogContainer"></div>
+  </div>
+</div>
+
+<script src="/shared/nav.js"></script>
+<script src="/shared/process-log.js"></script>
+<script src="/ciphers/xor.js"></script>
+<script>
+  let mode = 'encrypt';
+  const modeButtons = document.querySelectorAll('.mode-btn');
+  const keyInput = document.getElementById('keyInput');
+  const inputText = document.getElementById('inputText');
+  const outputText = document.getElementById('outputText');
+  const outputLabel = document.getElementById('outputLabel');
+  const inputLabel = document.getElementById('inputLabel');
+
+  const columns = [
+    { key: 'index', label: '#' },
+    { key: 'inputByte', label: 'Input (biner)' },
+    { key: 'keyByte', label: 'Kunci (biner)' },
+    { key: 'resultByte', label: 'XOR (biner)' },
+    { key: 'resultHex', label: 'Hasil (hex)' }
+  ];
+
+  function update(){
+    const { result, steps } = xorProcess(inputText.value, keyInput.value, mode);
+    outputText.textContent = result || ' ';
+    outputLabel.textContent = mode === 'encrypt' ? 'hasil (hex)' : 'hasil (teks asli)';
+    inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'teks tersandi (hex)';
+    renderProcessLog('processLogContainer', columns, steps);
+  }
+
+  modeButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      modeButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      inputText.value = mode === 'encrypt' ? 'SELAMAT DATANG' : xorProcess('SELAMAT DATANG', keyInput.value, 'encrypt').result;
+      update();
+    });
+  });
+
+  keyInput.addEventListener('input', update);
+  inputText.addEventListener('input', update);
+
+  update();
+</script>
+</body>
+</html>
