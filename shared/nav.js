@@ -1,10 +1,10 @@
 (function(){
   const pages = [
-    { href: "/", label: "Caesar" },
-    { href: "/vigenere", label: "Vigenère" },
-    { href: "/des", label: "DES" },
-    { href: "/xor", label: "XOR" },
-    { href: "/super", label: "Super" }
+{ href: "/index.html", label: "Caesar" },
+    { href: "/vigenere.html", label: "Vigenère" },
+    { href: "/des.html", label: "DES" },
+    { href: "/rc4.html", label: "RC4" },
+    { href: "/super.html", label: "Super" }
   ];
 
   const currentPath = window.location.pathname.replace(/\/$/, "") || "/";

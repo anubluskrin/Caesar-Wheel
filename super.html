@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -113,8 +113,7 @@
 <script src="/shared/bigint-utils.js"></script>
 <script src="/ciphers/caesar.js"></script>
 <script src="/ciphers/vigenere.js"></script>
-<script src="/ciphers/xor.js"></script>
-<script src="/ciphers/rsa.js"></script>
+<script src="/ciphers/rc4.js"></script>
 <script src="/ciphers/super.js"></script>
 <script>
   let rsaKeys = null;
@@ -199,6 +198,181 @@
 
   generateBtn.addEventListener('click', generateKeys);
   generateKeys();
+</script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Enkripsi</title>
+<link rel="stylesheet" href="/shared/theme.css">
+<style>
+  .key-mode-row{
+    display:flex; gap:20px; margin-bottom:16px; font-size:14px;
+  }
+  .key-mode-row label{ display:flex; align-items:center; gap:6px; margin:0; color:var(--ink); cursor:pointer; }
+  .key-mode-row label::before{ content:''; }
+  .separate-keys{ display:none; gap:12px; }
+  .separate-keys.active{ display:grid; grid-template-columns:1fr 1fr; }
+  .stage-list{ list-style:none; padding:0; margin:10px 0 0; }
+  .stage-list li{
+    border:1px solid var(--line); padding:8px 10px; margin-bottom:6px; font-size:14px;
+  }
+  .stage-list b{ display:block; color:var(--ink-soft); font-size:12px; margin-bottom:3px; }
+  .stage-list .val{ word-break:break-all; color:var(--red); }
+</style>
+</head>
+
+<body>
+
+<div class="sheet">
+  <div id="nav-slot"></div>
+
+  <div class="letterhead">
+    <h1>Super Enkripsi</h1>
+    <div class="ref">No. seri: S-04<br>Caesar → Vigenère → DES → RC4</div>
+  </div>
+
+  <p class="footnote" style="margin-bottom:20px;">
+    Pesan dienkripsi berlapis melalui keempat algoritma secara berurutan. Dekripsi
+    otomatis membalik urutannya.
+  </p>
+
+  <div class="field">
+    <label>mode kunci</label>
+    <div class="key-mode-row">
+      <label><input type="radio" name="keyMode" value="shared" checked> Kunci Sama untuk Semua Tahap</label>
+      <label><input type="radio" name="keyMode" value="separate"> Kunci Berbeda per Tahap</label>
+    </div>
+
+    <div id="sharedKeyField">
+      <input type="text" id="sharedKey" value="RAHASIA">
+    </div>
+
+    <div class="separate-keys" id="separateKeyFields">
+      <div>
+        <label for="caesarKey" style="font-size:12px;">geser Caesar (angka)</label>
+        <input type="number" id="caesarKey" value="3" min="0" max="25">
+      </div>
+      <div>
+        <label for="vigenereKey" style="font-size:12px;">kunci Vigenère</label>
+        <input type="text" id="vigenereKey" value="KUNCI">
+      </div>
+      <div>
+        <label for="desKey" style="font-size:12px;">kunci DES</label>
+        <input type="text" id="desKey" value="DESKEY8B">
+      </div>
+      <div>
+        <label for="rc4Key" style="font-size:12px;">kunci RC4</label>
+        <input type="text" id="rc4Key" value="STREAM">
+      </div>
+    </div>
+  </div>
+
+  <div class="bento-grid">
+
+    <div class="bento-panel">
+      <div class="mode-row" style="margin-bottom:0;">
+        <button class="mode-btn active" data-mode="encrypt">Sandikan</button>
+        <button class="mode-btn" data-mode="decrypt">Pecahkan</button>
+      </div>
+
+      <div class="field">
+        <label id="inputLabel" for="inputText">teks asli</label>
+        <textarea id="inputText" style="min-height:140px;">SELAMAT DATANG</textarea>
+      </div>
+
+      <button class="run-btn" id="runBtn">Jalankan Proses ▶</button>
+    </div>
+
+    <div class="bento-panel">
+      <div class="field">
+        <label>log tiap tahap</label>
+        <div id="processLogContainer" class="terminal-log" style="min-height:220px;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/shared/nav.js"></script>
+<script src="/shared/process-log.js"></script>
+<script src="/shared/bigint-utils.js"></script>
+<script src="/ciphers/caesar.js"></script>
+<script src="/ciphers/vigenere.js"></script>
+<script src="/ciphers/des.js"></script>
+<script src="/ciphers/rc4.js"></script>
+<script src="/ciphers/super.js"></script>
+<script>
+  let mode = 'encrypt';
+
+  const keyModeRadios = document.querySelectorAll('input[name="keyMode"]');
+  const sharedKeyField = document.getElementById('sharedKeyField');
+  const separateKeyFields = document.getElementById('separateKeyFields');
+  const sharedKey = document.getElementById('sharedKey');
+  const caesarKey = document.getElementById('caesarKey');
+  const vigenereKey = document.getElementById('vigenereKey');
+  const desKey = document.getElementById('desKey');
+  const rc4Key = document.getElementById('rc4Key');
+
+  const modeButtons = document.querySelectorAll('.mode-btn');
+  const inputText = document.getElementById('inputText');
+  const inputLabel = document.getElementById('inputLabel');
+  const runBtn = document.getElementById('runBtn');
+
+  keyModeRadios.forEach(r => r.addEventListener('change', ()=>{
+    const isShared = document.querySelector('input[name="keyMode"]:checked').value === 'shared';
+    sharedKeyField.style.display = isShared ? 'block' : 'none';
+    separateKeyFields.classList.toggle('active', !isShared);
+  }));
+
+  function getKeyConfig(){
+    return {
+      mode: document.querySelector('input[name="keyMode"]:checked').value,
+      shared: sharedKey.value,
+      caesar: caesarKey.value,
+      vigenere: vigenereKey.value,
+      des: desKey.value,
+      rc4: rc4Key.value
+    };
+  }
+
+  modeButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      modeButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'hex ciphertext (dari hasil Sandikan)';
+      if(mode === 'encrypt'){
+        inputText.value = 'SELAMAT DATANG';
+      } else {
+        try {
+          inputText.value = runSuperEncrypt('SELAMAT DATANG', getKeyConfig()).result;
+        } catch(e) {
+          inputText.value = '';
+        }
+      }
+    });
+  });
+
+  runBtn.addEventListener('click', ()=>{
+    const keyConfig = getKeyConfig();
+    runBtn.disabled = true;
+    try{
+      const out = mode === 'encrypt'
+        ? runSuperEncrypt(inputText.value, keyConfig)
+        : runSuperDecrypt(inputText.value, keyConfig);
+
+      const lines = out.stages.map(s => `${s.label}: ${s.value}`);
+      runTerminalLog('processLogContainer', lines, ()=>{ runBtn.disabled = false; }, 260);
+    }catch(err){
+      runTerminalLog('processLogContainer', [`ERROR: ${err.message}`], ()=>{ runBtn.disabled = false; });
+    }
+  });
 </script>
 </body>
 </html>

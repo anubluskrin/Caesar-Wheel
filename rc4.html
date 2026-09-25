@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DES</title>
+<title>XOR Stream Cipher</title>
 <link rel="stylesheet" href="/shared/theme.css">
 </head>
 <body>
@@ -12,20 +12,14 @@
   <div id="nav-slot"></div>
 
   <div class="letterhead">
-    <h1>DES</h1>
-    <div class="ref">No. seri: DES-56<br>Block cipher, 16 ronde Feistel</div>
+    <h1>XOR Stream Cipher</h1>
+    <div class="ref">No. seri: X-08<br>Operasi bit, kunci berulang</div>
   </div>
 
-  <p class="footnote" style="margin-bottom:20px; font-size:16px;">
-    Data Encryption Standard — memproses pesan per blok 64-bit (8 karakter), kunci
-    efektif 56-bit, 16 ronde jaringan Feistel. Kunci dipakai apa adanya (8 karakter
-    pertama; kurang dari itu di-pad nol). Mode ECB dengan padding PKCS5.
+  <p class="footnote" style="margin-bottom:24px;">
+    Tiap byte pesan di-XOR dengan byte kunci yang berulang. Hasil enkripsi berupa hex
+    (karena bisa jadi karakter tak tercetak); dekripsi menerima hex, mengembalikannya jadi teks.
   </p>
-
-  <div class="field">
-    <label for="keyInput">kunci (8 karakter)</label>
-    <input type="text" id="keyInput" value="RAHASIA1" maxlength="8">
-  </div>
 
   <div class="bento-grid">
 
@@ -36,23 +30,27 @@
       </div>
 
       <div class="field">
+        <label for="keyInput">kunci</label>
+        <input type="text" id="keyInput" value="RAHASIA">
+      </div>
+
+      <div class="field">
         <label id="inputLabel" for="inputText">teks asli</label>
-        <textarea id="inputText" style="min-height:140px; font-size:17px;">HI DES CIPHER</textarea>
+        <textarea id="inputText" style="min-height:160px;">SELAMAT DATANG</textarea>
       </div>
 
       <button class="run-btn" id="runBtn">Jalankan Proses ▶</button>
-      <p class="footnote" id="warnBox" style="margin-top:8px; font-size:15px;"></p>
     </div>
 
     <div class="bento-panel">
       <div class="field">
-        <label>log tiap ronde (per blok)</label>
-        <div id="processLogContainer" class="terminal-log" style="min-height:300px; font-size:15px;"></div>
+        <label>proses tiap byte (biner)</label>
+        <div id="processLogContainer" class="terminal-log" style="min-height:220px;"></div>
       </div>
 
       <div class="field">
         <label id="outputLabel">hasil (hex)</label>
-        <div class="output-box" id="outputText" style="font-size:17px;"></div>
+        <div class="output-box" id="outputText"></div>
       </div>
     </div>
 
@@ -61,17 +59,15 @@
 
 <script src="/shared/nav.js"></script>
 <script src="/shared/process-log.js"></script>
-<script src="/ciphers/xor.js"></script>
-<script src="/ciphers/des.js"></script>
+<script src="/ciphers/rc4.js"></script>
 <script>
   let mode = 'encrypt';
   const modeButtons = document.querySelectorAll('.mode-btn');
   const keyInput = document.getElementById('keyInput');
   const inputText = document.getElementById('inputText');
-  const inputLabel = document.getElementById('inputLabel');
   const outputText = document.getElementById('outputText');
   const outputLabel = document.getElementById('outputLabel');
-  const warnBox = document.getElementById('warnBox');
+  const inputLabel = document.getElementById('inputLabel');
   const runBtn = document.getElementById('runBtn');
 
   modeButtons.forEach(btn=>{
@@ -79,30 +75,21 @@
       modeButtons.forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       mode = btn.dataset.mode;
-      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'teks tersandi (hex)';
       outputLabel.textContent = mode === 'encrypt' ? 'hasil (hex)' : 'hasil (teks asli)';
-      warnBox.textContent = '';
-      if(mode === 'encrypt'){
-        inputText.value = 'HI DES CIPHER';
-      } else {
-        inputText.value = desProcess('HI DES CIPHER', keyInput.value, 'encrypt').result;
-      }
+      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'teks tersandi (hex)';
+      inputText.value = mode === 'encrypt'
+        ? 'SELAMAT DATANG'
+        : xorProcess('SELAMAT DATANG', keyInput.value, 'encrypt').result;
+      outputText.textContent = ' ';
+      processLogContainer.innerHTML = '';
     });
   });
 
-  runBtn.addEventListener('click', ()=>{
-    warnBox.textContent = '';
-    outputText.textContent = ' ';
-    try{
-      const { result, steps } = desProcess(inputText.value, keyInput.value, mode);
-      runBtn.disabled = true;
-      runTerminalLog('processLogContainer', steps, ()=>{
-        outputText.textContent = result || ' ';
-        runBtn.disabled = false;
-      }, 15);
-    }catch(err){
-      warnBox.textContent = err.message;
-    }
+  wireCipherRunner({
+    runBtn, outputText,
+    containerId: 'processLogContainer',
+    computeFn: () => xorProcess(inputText.value, keyInput.value, mode),
+    formatLine: s => `#${s.index} ${s.inputByte} XOR ${s.keyByte} = ${s.resultByte} (0x${s.resultHex})`
   });
 </script>
 </body>
@@ -113,12 +100,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DES - Data Encryption Standard</title>
+    <title>RC4 Stream Cipher</title>
     <link rel="stylesheet" href="/shared/theme.css">
     <style>
       #processLogContainer {
-        height: 220px !important;
-        max-height: 220px !important;
+        height: 200px !important;
+        max-height: 200px !important;
         overflow-y: auto !important;
         box-sizing: border-box;
       }
@@ -139,18 +126,18 @@
 
     <!-- Header Judul & Seri -->
     <div class="letterhead">
-        <h1>DES</h1>
-        <div class="ref">No. seri: DES-56<br>Block cipher, 16 ronde Feistel</div>
+        <h1>RC4 Stream Cipher</h1>
+        <div class="ref">No. seri: RC4-08<br>Stream cipher, KSA & PRGA</div>
     </div>
 
     <p class="footnote" style="margin-bottom:20px;">
-        Data Encryption Standard - memproses pesan per blok 64-bit (8 karakter), kunci efektif 56-bit, 16 ronde jaringan Feistel. Kunci dipakai apa adanya (8 karakter pertama; kurang dari itu di-pad nol). Mode ECB dengan padding PKCS5.
+        RC4 memproses pesan byte demi byte dengan aliran kunci semu (*keystream*). Hasil enkripsi berupa format Hexadecimal; dekripsi menerima Hex dan mengembalikannya menjadi teks asli.
     </p>
 
     <!-- Field Kunci -->
     <div class="field">
-        <label for="cipherKey">kunci (8 karakter)</label>
-        <input type="text" id="cipherKey" value="12345678" placeholder="Masukkan kunci 8 karakter...">
+        <label for="cipherKey">kunci rahasia</label>
+        <input type="text" id="cipherKey" value="RAHASIA" placeholder="Masukkan kunci rahasia...">
     </div>
 
     <!-- Bento Grid Layout 2 Kolom -->
@@ -165,7 +152,7 @@
 
             <div class="field">
                 <label id="inputLabel" for="inputText">teks asli</label>
-                <textarea id="inputText" style="min-height:140px;">AKU</textarea>
+                <textarea id="inputText" style="min-height:140px;">SELAMAT DATANG</textarea>
             </div>
 
             <button class="run-btn" id="runBtn">Jalankan Proses ▶</button>
@@ -174,7 +161,7 @@
         <!-- Kolom Kanan: Log & Hasil -->
         <div class="bento-panel">
             <div class="field">
-                <label>log tiap ronde (per blok)</label>
+                <label>log proses (keystream & xor)</label>
                 <div id="processLogContainer" class="terminal-log">Aktivitas proses akan muncul di sini...</div>
             </div>
 
@@ -187,45 +174,10 @@
     </div>
 </div>
 
-<!-- Impor Script Pendukung -->
+<!-- Script Pendukung & Logika -->
 <script src="/shared/nav.js"></script>
 <script src="/shared/process-log.js"></script>
-<script src="/shared/bigint-utils.js"></script>
-
-<!-- Definisi Fallback Utilitas Jika bigint-utils Belum Memuatnya -->
-<script>
-    if (typeof window.textToBytes !== 'function') {
-        window.textToBytes = function(str) {
-            const bytes = [];
-            for (let i = 0; i < str.length; i++) {
-                bytes.push(str.charCodeAt(i) & 0xFF);
-            }
-            return bytes;
-        };
-    }
-    if (typeof window.bytesToText !== 'function') {
-        window.bytesToText = function(bytes) {
-            return String.fromCharCode.apply(null, bytes);
-        };
-    }
-    if (typeof window.bytesToHex !== 'function') {
-        window.bytesToHex = function(bytes) {
-            return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-        };
-    }
-    if (typeof window.hexToBytes !== 'function') {
-        window.hexToBytes = function(hex) {
-            const bytes = [];
-            const cleanHex = hex.replace(/\s+/g, '');
-            for (let c = 0; c < cleanHex.length; c += 2) {
-                bytes.push(parseInt(cleanHex.substr(c, 2), 16));
-            }
-            return bytes;
-        };
-    }
-</script>
-
-<script src="/ciphers/des.js"></script>
+<script src="/ciphers/rc4.js"></script>
 
 <script>
     let mode = 'encrypt';
@@ -239,6 +191,61 @@
     const cipherKey = document.getElementById('cipherKey');
     const runBtn = document.getElementById('runBtn');
 
+    // Implementasi Engine Standar RC4
+    function executeRC4(text, key, isEncrypt) {
+        let S = [];
+        for (let i = 0; i < 256; i++) S[i] = i;
+
+        // KSA
+        let j = 0;
+        for (let i = 0; i < 256; i++) {
+            j = (j + S[i] + key.charCodeAt(i % key.length)) % 256;
+            [S[i], S[j]] = [S[j], S[i]];
+        }
+
+        let logs = [];
+        logs.push(`=== INISIALISASI KSA SELESAI ===`);
+
+        // PRGA & XOR
+        let i = 0;
+        j = 0;
+
+        if (isEncrypt) {
+            let out = [];
+            for (let k = 0; k < text.length; k++) {
+                i = (i + 1) % 256;
+                j = (j + S[i]) % 256;
+                [S[i], S[j]] = [S[j], S[i]];
+
+                let K = S[(S[i] + S[j]) % 256];
+                let charCode = text.charCodeAt(k);
+                let cipherByte = charCode ^ K;
+
+                let hex = cipherByte.toString(16).padStart(2, '0');
+                out.push(hex);
+                logs.push(`Byte [${k}] '${text[k]}' (0x${charCode.toString(16)}) ^ Keystream (0x${K.toString(16).padStart(2, '0')}) = Hex: ${hex}`);
+            }
+            return { result: out.join(''), logs: logs };
+        } else {
+            let cleanHex = text.replace(/\s+/g, '');
+            let decryptedStr = "";
+            for (let k = 0; k < cleanHex.length; k += 2) {
+                i = (i + 1) % 256;
+                j = (j + S[i]) % 256;
+                [S[i], S[j]] = [S[j], S[i]];
+
+                let K = S[(S[i] + S[j]) % 256];
+                let hexByte = parseInt(cleanHex.substr(k, 2), 16);
+                let plainByte = hexByte ^ K;
+                let char = String.fromCharCode(plainByte);
+
+                decryptedStr += char;
+                logs.push(`Hex [${cleanHex.substr(k, 2)}] ^ Keystream (0x${K.toString(16).padStart(2, '0')}) = Teks: '${char}'`);
+            }
+            return { result: decryptedStr, logs: logs };
+        }
+    }
+
     // Switch Mode Sandikan
     btnModeEncrypt.addEventListener('click', () => {
         mode = 'encrypt';
@@ -246,7 +253,7 @@
         btnModeDecrypt.classList.remove('active');
         inputLabel.textContent = 'teks asli';
         outputLabel.textContent = 'hasil (hex)';
-        inputText.value = 'AKU';
+        inputText.value = 'SELAMAT DATANG';
     });
 
     // Switch Mode Pecahkan
@@ -261,7 +268,7 @@
         }
     });
 
-    // Eksekusi Proses DES
+    // Eksekusi Proses
     runBtn.addEventListener('click', () => {
         const key = cipherKey.value;
         const text = inputText.value;
@@ -276,35 +283,31 @@
         try {
             let resObj = null;
 
-            if (typeof desProcess === 'function') {
-                resObj = desProcess(text, key, mode);
-            } else if (mode === 'encrypt' && typeof encryptDES === 'function') {
-                const r = encryptDES(text, key);
+            if (typeof rc4Process === 'function') {
+                resObj = rc4Process(text, key, mode);
+            } else if (mode === 'encrypt' && typeof encryptRC4 === 'function') {
+                const r = encryptRC4(text, key);
                 resObj = typeof r === 'object' ? r : { result: r };
-            } else if (mode === 'decrypt' && typeof decryptDES === 'function') {
-                const r = decryptDES(text, key);
+            } else if (mode === 'decrypt' && typeof decryptRC4 === 'function') {
+                const r = decryptRC4(text, key);
                 resObj = typeof r === 'object' ? r : { result: r };
             }
 
-            const finalResult = (resObj && resObj.result !== undefined) ? resObj.result : resObj;
-            outputText.value = finalResult || '';
-
-            let logLines = [];
-            if (resObj && Array.isArray(resObj.log) && resObj.log.length > 0) {
-                logLines = resObj.log;
-            } else if (resObj && Array.isArray(resObj.stages)) {
-                logLines = resObj.stages.map(s => `${s.label}: ${s.value}`);
-            } else {
-                logLines = [
-                    `> ${mode === 'encrypt' ? 'Enkripsi' : 'Dekripsi'} DES Selesai`,
-                    `> Kunci: ${key}`,
-                    `> Input: ${text}`,
-                    `> Output: ${finalResult}`
-                ];
+            if (!resObj || !resObj.result) {
+                resObj = executeRC4(text, key, mode === 'encrypt');
             }
+
+            const finalResult = resObj.result || resObj;
+            outputText.value = finalResult;
+
+            let logLines = resObj.logs || resObj.log || [
+                `> ${mode === 'encrypt' ? 'Enkripsi' : 'Dekripsi'} RC4 Selesai`,
+                `> Input: ${text}`,
+                `> Output: ${finalResult}`
+            ];
 
             if (typeof runTerminalLog === 'function') {
-                runTerminalLog('processLogContainer', logLines, () => { runBtn.disabled = false; }, 60);
+                runTerminalLog('processLogContainer', logLines, () => { runBtn.disabled = false; }, 80);
             } else {
                 document.getElementById('processLogContainer').textContent = logLines.join('\n');
                 runBtn.disabled = false;
