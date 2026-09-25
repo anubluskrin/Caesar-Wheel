@@ -2,7 +2,7 @@
   const pages = [
     { href: "/", label: "Caesar" },
     { href: "/vigenere", label: "Vigenère" },
-    { href: "/rsa", label: "RSA" },
+    { href: "/dh", label: "Diffie Hellman" },
     { href: "/xor", label: "XOR" },
     { href: "/super", label: "Super" }
   ];

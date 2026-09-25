@@ -3,56 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RSA</title>
+<title>Diffie-Hellman</title>
 <link rel="stylesheet" href="/shared/theme.css">
 <style>
-  .key-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px 16px;
-    font-size:14px;
-    margin-top:10px;
-  }
+  .key-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; font-size:14px; margin-top:10px; }
   .key-grid div{ word-break:break-all; }
   .key-grid b{ color:var(--ink-soft); font-weight:700; }
-  .bit-row{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-  .bit-row input[type="range"]{ flex:1; }
-  .bit-row span{ font-weight:700; min-width:52px; text-align:right; }
   .gen-btn{
-    padding:9px 16px; border:1px solid var(--ink); background:var(--paper-dark);
-    font-family:'Courier Prime', monospace; font-weight:700; cursor:pointer;
+    padding:9px 16px; border:3px solid var(--ink); background:#fff200;
+    font-family:'VT323', monospace; font-weight:700; cursor:pointer;
+    box-shadow:3px 3px 0 #000;
   }
-  .gen-btn:hover{ background:var(--ink); color:var(--paper); }
-  .warn{ color:var(--red); font-size:13px; margin-top:8px; }
+  .gen-btn:hover{ transform:translate(2px,2px); box-shadow:1px 1px 0 #000; }
 </style>
 </head>
-
 <body>
 
 <div class="sheet">
   <div id="nav-slot"></div>
 
   <div class="letterhead">
-    <h1>RSA</h1>
-    <div class="ref">No. seri: R-2048<br>Kunci publik & privat</div>
+    <h1>Diffie-Hellman</h1>
+    <div class="ref">No. seri: DH-26<br>Pertukaran kunci</div>
   </div>
 
   <p class="footnote" style="margin-bottom:20px;">
-    RSA asli (tanpa padding, untuk edukasi). Ukuran bit kecil = cepat & mudah diikuti
-    prosesnya, tapi tidak aman untuk data sungguhan.
+    DH bukan algoritma enkripsi — ia cuma menyepakatkan satu kunci rahasia bersama
+    (Alice & Bob) tanpa pernah mengirim kuncinya langsung. Kunci hasil kesepakatan
+    itu lalu dipakai untuk meng-XOR pesan.
   </p>
 
   <div class="field">
-    <label>panjang bit tiap prima (p, q)</label>
+    <label>panjang bit modulus (p)</label>
     <div class="bit-row" style="display:flex; align-items:center; gap:10px;">
       <input type="range" id="bitSlider" min="8" max="64" step="8" value="16" style="flex:1;">
       <span id="bitValue" style="font-weight:700;">16 bit</span>
-      <button class="gen-btn" id="generateBtn">Generate Kunci Baru</button>
+      <button class="gen-btn" id="generateBtn">Jalankan Pertukaran Kunci</button>
     </div>
   </div>
 
   <div class="field">
-    <label>kunci yang dihasilkan</label>
+    <label>hasil pertukaran kunci</label>
     <div class="key-grid" id="keyGrid"></div>
   </div>
 
@@ -66,21 +57,21 @@
 
       <div class="field">
         <label id="inputLabel" for="inputText">teks asli</label>
-        <textarea id="inputText" style="min-height:140px;">HI RSA</textarea>
+        <textarea id="inputText" style="min-height:140px;">HI DIFFIE HELLMAN</textarea>
       </div>
 
       <button class="run-btn" id="runBtn">Jalankan Proses ▶</button>
-      <p class="footnote warn" id="warnBox" style="margin-top:8px;"></p>
+      <p class="footnote" id="warnBox" style="margin-top:8px;"></p>
     </div>
 
     <div class="bento-panel">
       <div class="field">
-        <label>proses tiap karakter</label>
-        <div id="processLogContainer" class="terminal-log" style="min-height:220px;"></div>
+        <label>log pertukaran kunci & enkripsi</label>
+        <div id="processLogContainer" class="terminal-log" style="min-height:260px;"></div>
       </div>
 
       <div class="field">
-        <label id="outputLabel">hasil (blok angka)</label>
+        <label id="outputLabel">hasil (hex)</label>
         <div class="output-box" id="outputText"></div>
       </div>
     </div>
@@ -91,9 +82,10 @@
 <script src="/shared/nav.js"></script>
 <script src="/shared/process-log.js"></script>
 <script src="/shared/bigint-utils.js"></script>
-<script src="/ciphers/rsa.js"></script>
+<script src="/ciphers/xor.js"></script>
+<script src="/ciphers/dh.js"></script>
 <script>
-  let keys = null;
+  let dhResult = null;
   let mode = 'encrypt';
 
   const bitSlider = document.getElementById('bitSlider');
@@ -112,23 +104,25 @@
 
   function renderKeys(){
     keyGrid.innerHTML = `
-      <div><b>p</b> = ${keys.p}</div>
-      <div><b>q</b> = ${keys.q}</div>
-      <div><b>n</b> = ${keys.n}</div>
-      <div><b>φ(n)</b> = ${keys.phi}</div>
-      <div><b>e (publik)</b> = ${keys.e}</div>
-      <div><b>d (privat)</b> = ${keys.d}</div>
+      <div><b>p</b> = ${dhResult.p}</div>
+      <div><b>g</b> = ${dhResult.g}</div>
+      <div><b>A (publik Alice)</b> = ${dhResult.A}</div>
+      <div><b>B (publik Bob)</b> = ${dhResult.B}</div>
+      <div style="grid-column:1/-1;"><b>K (rahasia bersama)</b> = ${dhResult.sharedSecret}</div>
     `;
   }
 
-  function generateKeys(){
+  function runExchange(){
     generateBtn.textContent = 'Menghitung...';
     generateBtn.disabled = true;
     setTimeout(()=>{
-      keys = generateRSAKeys(Number(bitSlider.value));
+      dhResult = dhKeyExchange(Number(bitSlider.value));
       renderKeys();
-      generateBtn.textContent = 'Generate Kunci Baru';
-      generateBtn.disabled = false;
+      const lines = dhResult.steps.map(s => `${s.label}: ${s.detail}`);
+      runTerminalLog('processLogContainer', lines, ()=>{
+        generateBtn.textContent = 'Jalankan Pertukaran Kunci';
+        generateBtn.disabled = false;
+      }, 300);
     }, 10);
   }
 
@@ -137,39 +131,34 @@
       modeButtons.forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       mode = btn.dataset.mode;
-      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'blok angka (pisah spasi)';
-      outputLabel.textContent = mode === 'encrypt' ? 'hasil (blok angka)' : 'hasil (teks asli)';
+      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'teks tersandi (hex)';
+      outputLabel.textContent = mode === 'encrypt' ? 'hasil (hex)' : 'hasil (teks asli)';
       warnBox.textContent = '';
       if(mode === 'encrypt'){
-        inputText.value = 'HI RSA';
-      } else if(keys){
-        inputText.value = rsaProcess('HI RSA', keys, 'encrypt').result;
+        inputText.value = 'HI DIFFIE HELLMAN';
+      } else if(dhResult){
+        inputText.value = dhProcess('HI DIFFIE HELLMAN', dhResult, 'encrypt').result;
       }
     });
   });
 
   runBtn.addEventListener('click', ()=>{
-    if(!keys) return;
-    warnBox.textContent = '';
+    if(!dhResult){ warnBox.textContent = 'Jalankan pertukaran kunci dulu.'; return; }
     outputText.textContent = ' ';
-    try{
-      const { result, steps } = rsaProcess(inputText.value, keys, mode);
-      const lines = mode === 'encrypt'
-        ? steps.map(s => `'${s.char}' → M=${s.M} → ${s.formula} = ${s.C}`)
-        : steps.map(s => `C=${s.C} → ${s.formula} = ${s.M} → '${s.char}'`);
-
-      runBtn.disabled = true;
-      runTerminalLog('processLogContainer', lines, ()=>{
-        outputText.textContent = result || ' ';
-        runBtn.disabled = false;
-      });
-    }catch(err){
-      warnBox.textContent = err.message;
-    }
+    const { result, xorSteps, xorKey } = dhProcess(inputText.value, dhResult, mode);
+    const lines = [
+      `Kunci XOR diturunkan dari K: "${xorKey}"`,
+      ...xorSteps.map(s => `#${s.index} ${s.inputByte} XOR ${s.keyByte} = ${s.resultByte}`)
+    ];
+    runBtn.disabled = true;
+    runTerminalLog('processLogContainer', lines, ()=>{
+      outputText.textContent = result || ' ';
+      runBtn.disabled = false;
+    });
   });
 
-  generateBtn.addEventListener('click', generateKeys);
-  generateKeys();
+  generateBtn.addEventListener('click', runExchange);
+  runExchange();
 </script>
 </body>
 </html>
