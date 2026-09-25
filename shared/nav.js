@@ -3,7 +3,7 @@
     { href: "/", label: "Caesar" },
     { href: "/vigenere", label: "Vigenère" },
     { href: "/des", label: "DES" },
-    { href: "/xor", label: "XOR" },
+    { href: "/xor", label: "RC4" },
     { href: "/super", label: "Super" }
   ];
 
