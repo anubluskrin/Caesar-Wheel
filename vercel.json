@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/vigenere", "destination": "/vigenere.html" },
-    { "source": "/dh", "destination": "/dh.html" },
+    { "source": "/des", "destination": "/des.html" },
     { "source": "/xor", "destination": "/xor.html" },
     { "source": "/super", "destination": "/super.html" }
   ]

@@ -3,19 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diffie-Hellman</title>
+<title>DES</title>
 <link rel="stylesheet" href="/shared/theme.css">
-<style>
-  .key-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; font-size:14px; margin-top:10px; }
-  .key-grid div{ word-break:break-all; }
-  .key-grid b{ color:var(--ink-soft); font-weight:700; }
-  .gen-btn{
-    padding:9px 16px; border:3px solid var(--ink); background:#fff200;
-    font-family:'VT323', monospace; font-weight:700; cursor:pointer;
-    box-shadow:3px 3px 0 #000;
-  }
-  .gen-btn:hover{ transform:translate(2px,2px); box-shadow:1px 1px 0 #000; }
-</style>
 </head>
 <body>
 
@@ -23,28 +12,19 @@
   <div id="nav-slot"></div>
 
   <div class="letterhead">
-    <h1>Diffie-Hellman</h1>
-    <div class="ref">No. seri: DH-26<br>Pertukaran kunci</div>
+    <h1>DES</h1>
+    <div class="ref">No. seri: DES-56<br>Block cipher, 16 ronde Feistel</div>
   </div>
 
-  <p class="footnote" style="margin-bottom:20px;">
-    DH bukan algoritma enkripsi — ia cuma menyepakatkan satu kunci rahasia bersama
-    (Alice & Bob) tanpa pernah mengirim kuncinya langsung. Kunci hasil kesepakatan
-    itu lalu dipakai untuk meng-XOR pesan.
+  <p class="footnote" style="margin-bottom:20px; font-size:16px;">
+    Data Encryption Standard — memproses pesan per blok 64-bit (8 karakter), kunci
+    efektif 56-bit, 16 ronde jaringan Feistel. Kunci dipakai apa adanya (8 karakter
+    pertama; kurang dari itu di-pad nol). Mode ECB dengan padding PKCS5.
   </p>
 
   <div class="field">
-    <label>panjang bit modulus (p)</label>
-    <div class="bit-row" style="display:flex; align-items:center; gap:10px;">
-      <input type="range" id="bitSlider" min="8" max="64" step="8" value="16" style="flex:1;">
-      <span id="bitValue" style="font-weight:700;">16 bit</span>
-      <button class="gen-btn" id="generateBtn">Jalankan Pertukaran Kunci</button>
-    </div>
-  </div>
-
-  <div class="field">
-    <label>hasil pertukaran kunci</label>
-    <div class="key-grid" id="keyGrid"></div>
+    <label for="keyInput">kunci (8 karakter)</label>
+    <input type="text" id="keyInput" value="RAHASIA1" maxlength="8">
   </div>
 
   <div class="bento-grid">
@@ -57,22 +37,22 @@
 
       <div class="field">
         <label id="inputLabel" for="inputText">teks asli</label>
-        <textarea id="inputText" style="min-height:140px;">HI DIFFIE HELLMAN</textarea>
+        <textarea id="inputText" style="min-height:140px; font-size:17px;">HI DES CIPHER</textarea>
       </div>
 
       <button class="run-btn" id="runBtn">Jalankan Proses ▶</button>
-      <p class="footnote" id="warnBox" style="margin-top:8px;"></p>
+      <p class="footnote" id="warnBox" style="margin-top:8px; font-size:15px;"></p>
     </div>
 
     <div class="bento-panel">
       <div class="field">
-        <label>log pertukaran kunci & enkripsi</label>
-        <div id="processLogContainer" class="terminal-log" style="min-height:260px;"></div>
+        <label>log tiap ronde (per blok)</label>
+        <div id="processLogContainer" class="terminal-log" style="min-height:300px; font-size:15px;"></div>
       </div>
 
       <div class="field">
         <label id="outputLabel">hasil (hex)</label>
-        <div class="output-box" id="outputText"></div>
+        <div class="output-box" id="outputText" style="font-size:17px;"></div>
       </div>
     </div>
 
@@ -81,50 +61,18 @@
 
 <script src="/shared/nav.js"></script>
 <script src="/shared/process-log.js"></script>
-<script src="/shared/bigint-utils.js"></script>
 <script src="/ciphers/xor.js"></script>
-<script src="/ciphers/dh.js"></script>
+<script src="/ciphers/des.js"></script>
 <script>
-  let dhResult = null;
   let mode = 'encrypt';
-
-  const bitSlider = document.getElementById('bitSlider');
-  const bitValue = document.getElementById('bitValue');
-  const generateBtn = document.getElementById('generateBtn');
-  const keyGrid = document.getElementById('keyGrid');
   const modeButtons = document.querySelectorAll('.mode-btn');
+  const keyInput = document.getElementById('keyInput');
   const inputText = document.getElementById('inputText');
   const inputLabel = document.getElementById('inputLabel');
   const outputText = document.getElementById('outputText');
   const outputLabel = document.getElementById('outputLabel');
   const warnBox = document.getElementById('warnBox');
   const runBtn = document.getElementById('runBtn');
-
-  bitSlider.addEventListener('input', ()=> bitValue.textContent = `${bitSlider.value} bit`);
-
-  function renderKeys(){
-    keyGrid.innerHTML = `
-      <div><b>p</b> = ${dhResult.p}</div>
-      <div><b>g</b> = ${dhResult.g}</div>
-      <div><b>A (publik Alice)</b> = ${dhResult.A}</div>
-      <div><b>B (publik Bob)</b> = ${dhResult.B}</div>
-      <div style="grid-column:1/-1;"><b>K (rahasia bersama)</b> = ${dhResult.sharedSecret}</div>
-    `;
-  }
-
-  function runExchange(){
-    generateBtn.textContent = 'Menghitung...';
-    generateBtn.disabled = true;
-    setTimeout(()=>{
-      dhResult = dhKeyExchange(Number(bitSlider.value));
-      renderKeys();
-      const lines = dhResult.steps.map(s => `${s.label}: ${s.detail}`);
-      runTerminalLog('processLogContainer', lines, ()=>{
-        generateBtn.textContent = 'Jalankan Pertukaran Kunci';
-        generateBtn.disabled = false;
-      }, 300);
-    }, 10);
-  }
 
   modeButtons.forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -135,30 +83,27 @@
       outputLabel.textContent = mode === 'encrypt' ? 'hasil (hex)' : 'hasil (teks asli)';
       warnBox.textContent = '';
       if(mode === 'encrypt'){
-        inputText.value = 'HI DIFFIE HELLMAN';
-      } else if(dhResult){
-        inputText.value = dhProcess('HI DIFFIE HELLMAN', dhResult, 'encrypt').result;
+        inputText.value = 'HI DES CIPHER';
+      } else {
+        inputText.value = desProcess('HI DES CIPHER', keyInput.value, 'encrypt').result;
       }
     });
   });
 
   runBtn.addEventListener('click', ()=>{
-    if(!dhResult){ warnBox.textContent = 'Jalankan pertukaran kunci dulu.'; return; }
+    warnBox.textContent = '';
     outputText.textContent = ' ';
-    const { result, xorSteps, xorKey } = dhProcess(inputText.value, dhResult, mode);
-    const lines = [
-      `Kunci XOR diturunkan dari K: "${xorKey}"`,
-      ...xorSteps.map(s => `#${s.index} ${s.inputByte} XOR ${s.keyByte} = ${s.resultByte}`)
-    ];
-    runBtn.disabled = true;
-    runTerminalLog('processLogContainer', lines, ()=>{
-      outputText.textContent = result || ' ';
-      runBtn.disabled = false;
-    });
+    try{
+      const { result, steps } = desProcess(inputText.value, keyInput.value, mode);
+      runBtn.disabled = true;
+      runTerminalLog('processLogContainer', steps, ()=>{
+        outputText.textContent = result || ' ';
+        runBtn.disabled = false;
+      }, 15);
+    }catch(err){
+      warnBox.textContent = err.message;
+    }
   });
-
-  generateBtn.addEventListener('click', runExchange);
-  runExchange();
 </script>
 </body>
 </html>
