@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RC4 Stream Cipher</title>
+<title>XOR Stream Cipher</title>
 <link rel="stylesheet" href="/shared/theme.css">
 </head>
 <body>
@@ -12,13 +12,13 @@
   <div id="nav-slot"></div>
 
   <div class="letterhead">
-    <h1>RC4 Stream Cipher</h1>
-    <div class="ref">No. seri: R-04<br>Keystream dinamis, bukan XOR repetitif</div>
+    <h1>XOR Stream Cipher</h1>
+    <div class="ref">No. seri: X-08<br>Operasi bit, kunci berulang</div>
   </div>
 
   <p class="footnote" style="margin-bottom:24px;">
-    RC4 membentuk keystream byte demi byte dari kunci, lalu hasilnya dio-XOR dengan pesan.
-    Enkripsi menghasilkan hex, sedangkan dekripsi menerima hex lalu mengembalikan teks asli.
+    Tiap byte pesan di-XOR dengan byte kunci yang berulang. Hasil enkripsi berupa hex
+    (karena bisa jadi karakter tak tercetak); dekripsi menerima hex, mengembalikannya jadi teks.
   </p>
 
   <div class="bento-grid">
