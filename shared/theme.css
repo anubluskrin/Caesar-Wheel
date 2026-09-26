@@ -161,6 +161,42 @@ textarea:focus, input:focus{
   box-shadow:0 0 0 #000;
 }
 
+/* Toggle kecil untuk pengaturan tampilan (mis. Sederhana/Teknis pada log proses) —
+   sengaja dibuat jauh lebih kecil & tanpa shadow tebal supaya TIDAK terlihat seperti
+   bagian dari toggle utama (Sandikan/Pecahkan). Ini kontrol yang berbeda maksudnya. */
+.logmode-row{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:10px;
+}
+.logmode-label{
+  font-size:11px;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  margin-right:2px;
+}
+.logmode-btn{
+  padding:3px 10px;
+  background:#fff;
+  border:2px solid var(--ink-soft);
+  border-radius:12px;
+  color:var(--ink-soft);
+  font-family:'VT323', monospace;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:none;
+  transition:all .08s ease;
+}
+.logmode-btn:hover{ border-color:var(--ink); color:var(--ink); }
+.logmode-btn.active{
+  background:var(--ink-soft);
+  border-color:var(--ink-soft);
+  color:#fff;
+}
+
 .footnote{
   margin-top:10px;
   font-size:15px;

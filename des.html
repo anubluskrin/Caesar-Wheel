@@ -47,9 +47,10 @@
     <div class="bento-panel">
       <div class="field">
         <label>log tiap ronde (per blok)</label>
-        <div class="mode-row" id="logModeRow" style="margin-bottom:10px;">
-          <button class="mode-btn active" data-logmode="simple" type="button">Sederhana</button>
-          <button class="mode-btn" data-logmode="tech" type="button">Teknis</button>
+        <div class="logmode-row" id="logModeRow">
+          <span class="logmode-label">tampilan log:</span>
+          <button class="logmode-btn active" data-logmode="simple" type="button">Sederhana</button>
+          <button class="logmode-btn" data-logmode="tech" type="button">Teknis</button>
         </div>
         <div id="processLogContainer" class="terminal-log" style="min-height:300px; font-size:15px;"></div>
       </div>
@@ -77,7 +78,7 @@
   const outputLabel = document.getElementById('outputLabel');
   const warnBox = document.getElementById('warnBox');
   const runBtn = document.getElementById('runBtn');
-  const logModeButtons = document.querySelectorAll('#logModeRow .mode-btn');
+  const logModeButtons = document.querySelectorAll('#logModeRow .logmode-btn');
   const processLogContainer = document.getElementById('processLogContainer');
 
   let logMode = 'simple';
