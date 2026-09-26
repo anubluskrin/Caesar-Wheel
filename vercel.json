@@ -2,7 +2,7 @@
   "rewrites": [
     { "source": "/vigenere", "destination": "/vigenere.html" },
     { "source": "/des", "destination": "/des.html" },
-    { "source": "/xor", "destination": "/xor.html" },
+    { "source": "/rc4", "destination": "/rc4.html" },
     { "source": "/super", "destination": "/super.html" }
   ]
 }
