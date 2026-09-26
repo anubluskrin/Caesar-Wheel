@@ -10,6 +10,8 @@ An interactive web suite for learning classical and modern cryptography, featuri
 
 This project extends [Caesar Wheel](https://github.com/anubluskrin/Caesar-Wheel) into a multi-page cryptography toolkit.
 
+---
+
 ### Features
 
 - Five cryptography tools in one site: Caesar, Vigenere, DES, RC4, and Super Encryption
@@ -19,6 +21,8 @@ This project extends [Caesar Wheel](https://github.com/anubluskrin/Caesar-Wheel)
 - Consistent navigation and visual theme shared across all pages
 - Fully client-side, no backend or database
 - No build step, no external frameworks or libraries
+
+---
 
 ### Usage
 
@@ -49,6 +53,8 @@ This project extends [Caesar Wheel](https://github.com/anubluskrin/Caesar-Wheel)
 2. Encryption runs Caesar, then Vigenere, then DES, then RC4, with each intermediate stage shown.
 3. Decryption automatically reverses the order: RC4, DES, Vigenere, Caesar.
 
+---
+
 ### Run locally
 
 No dependencies or build step. `vercel.json` relies on server-level rewrites for the clean URLs (`/vigenere`, `/des`, `/rc4`, `/super`), so a static server is recommended over opening `index.html` directly:
@@ -60,6 +66,8 @@ python3 -m http.server 5500
 ```
 
 Then open `http://localhost:<port>/` in a browser.
+
+---
 
 ### How it works
 
@@ -89,6 +97,8 @@ encrypt:  RC4( DES( Vigenere( Caesar( P ) ) ) )
 decrypt:  Caesar⁻¹( Vigenere⁻¹( DES⁻¹( RC4⁻¹( C ) ) ) )
 ```
 
+---
+
 ### Project structure
 
 ```
@@ -113,13 +123,19 @@ shared/
   byte-utils.js        Text / byte / hex conversion utilities
 ```
 
+---
+
 ### Tech
 
 HTML, SVG, CSS, vanilla JavaScript, no frameworks or libraries. Deployed as a static site on Vercel.
 
+---
+
 ### Disclaimer
 
 This project is built for educational purposes, to make classical and modern ciphers easy to follow step by step. The implementations here are not hardened for real-world use and should not be used to protect sensitive data. For production needs, use a vetted cryptography library such as the Web Crypto API or libsodium.
+
+---
 
 ### License
 
@@ -135,6 +151,8 @@ Kumpulan alat web interaktif untuk mempelajari kriptografi klasik dan modern, me
 
 Proyek ini merupakan pengembangan lanjutan dari [Caesar Wheel](https://github.com/anubluskrin/Caesar-Wheel) menjadi toolkit kriptografi multi-halaman.
 
+---
+
 ### Fitur
 
 - Lima alat kriptografi dalam satu situs: Caesar, Vigenere, DES, RC4, dan Super Enkripsi
@@ -144,6 +162,8 @@ Proyek ini merupakan pengembangan lanjutan dari [Caesar Wheel](https://github.co
 - Navigasi dan tema visual yang konsisten di semua halaman
 - Sepenuhnya berjalan di sisi klien (client-side), tanpa backend atau basis data
 - Tanpa build step, tanpa framework atau library eksternal
+
+---
 
 ### Cara Penggunaan
 
@@ -174,6 +194,8 @@ Proyek ini merupakan pengembangan lanjutan dari [Caesar Wheel](https://github.co
 2. Enkripsi berjalan berurutan: Caesar, lalu Vigenere, lalu DES, lalu RC4, dengan setiap tahap antara ditampilkan.
 3. Dekripsi otomatis membalik urutan: RC4, DES, Vigenere, Caesar.
 
+---
+
 ### Menjalankan Secara Lokal
 
 Tidak ada dependensi atau build step. `vercel.json` mengandalkan rewrite di level server untuk URL bersih (`/vigenere`, `/des`, `/rc4`, `/super`), sehingga disarankan menjalankan server statis daripada membuka `index.html` secara langsung:
@@ -185,6 +207,8 @@ python3 -m http.server 5500
 ```
 
 Lalu buka `http://localhost:<port>/` di browser.
+
+---
 
 ### Cara Kerja
 
@@ -214,6 +238,8 @@ enkripsi:  RC4( DES( Vigenere( Caesar( P ) ) ) )
 dekripsi:  Caesar⁻¹( Vigenere⁻¹( DES⁻¹( RC4⁻¹( C ) ) ) )
 ```
 
+---
+
 ### Struktur Proyek
 
 ```
@@ -238,13 +264,19 @@ shared/
   byte-utils.js        Utilitas konversi teks / byte / hex
 ```
 
+---
+
 ### Teknologi
 
 HTML, SVG, CSS, JavaScript murni, tanpa framework atau library. Dideploy sebagai situs statis di Vercel.
 
+---
+
 ### Disclaimer
 
 Proyek ini dibuat untuk tujuan edukasi, agar algoritma sandi klasik dan modern mudah dipahami langkah demi langkah. Implementasi di sini tidak dikeraskan (hardened) untuk penggunaan dunia nyata dan tidak boleh dipakai untuk melindungi data sensitif. Untuk kebutuhan produksi, gunakan pustaka kriptografi yang teruji seperti Web Crypto API atau libsodium.
+
+---
 
 ### Lisensi
 
