@@ -26,8 +26,8 @@ function runSuperEncrypt(text, keyConfig){
 
   const s1 = caesarProcess(text, caesarShift, 'encrypt').result;
   const s2 = vigenereProcess(s1, vigenereKey, 'encrypt').result;
-  const s3 = rc4Process(s2, rc4Key, 'encrypt').result;       // hex string
-  const s4 = desProcess(s3, desKey, 'encrypt').result;        // hex string
+  const s3 = desProcess(s2, desKey, 'encrypt').result;        // hex string
+  const s4 = rc4Process(s3, rc4Key, 'encrypt').result;         // hex string
 
   return {
     result: s4,
@@ -35,8 +35,8 @@ function runSuperEncrypt(text, keyConfig){
       { label: 'Teks Asli', value: text },
       { label: '1. Setelah Caesar', value: s1 },
       { label: '2. Setelah Vigenère', value: s2 },
-      { label: '3. Setelah RC4 (hex)', value: s3 },
-      { label: '4. Setelah DES — hasil akhir (hex)', value: s4 }
+      { label: '3. Setelah DES (hex)', value: s3 },
+      { label: '4. Setelah RC4 — hasil akhir (hex)', value: s4 }
     ]
   };
 }
@@ -44,8 +44,8 @@ function runSuperEncrypt(text, keyConfig){
 function runSuperDecrypt(cipherText, keyConfig){
   const { caesarShift, vigenereKey, rc4Key, desKey } = resolveKeys(keyConfig);
 
-  const s1 = desProcess(cipherText, desKey, 'decrypt').result; // hex -> hex (RC4 masih dalam bentuk hex)
-  const s2 = rc4Process(s1, rc4Key, 'decrypt').result;
+  const s1 = rc4Process(cipherText, rc4Key, 'decrypt').result; // hex -> hex (DES masih dalam bentuk hex)
+  const s2 = desProcess(s1, desKey, 'decrypt').result;
   const s3 = vigenereProcess(s2, vigenereKey, 'decrypt').result;
   const s4 = caesarProcess(s3, caesarShift, 'decrypt').result;
 
@@ -53,8 +53,8 @@ function runSuperDecrypt(cipherText, keyConfig){
     result: s4,
     stages: [
       { label: 'Cipher Masuk', value: cipherText },
-      { label: '1. Setelah DES⁻¹ (hex)', value: s1 },
-      { label: '2. Setelah RC4⁻¹', value: s2 },
+      { label: '1. Setelah RC4⁻¹ (hex)', value: s1 },
+      { label: '2. Setelah DES⁻¹', value: s2 },
       { label: '3. Setelah Vigenère⁻¹', value: s3 },
       { label: '4. Setelah Caesar⁻¹ — teks asli', value: s4 }
     ]
