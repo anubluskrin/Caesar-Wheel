@@ -71,23 +71,39 @@ function desFeistel(R, subkey){
 }
 
 // ===== proses 1 blok 64-bit, 16 ronde Feistel =====
+// Setiap langkah dicatat sebagai { tech, simple } — lihat catatan di bagian atas rc4.js.
 function desProcessBlock(blockBytes, subkeys, steps, blockIndex){
   const bits = desBytesToBits(blockBytes);
   const permuted = desPermute(bits, DES_IP);
   let L = permuted.slice(0, 32);
   let R = permuted.slice(32, 64);
 
+  steps.push({
+    tech: `--- Blok ${blockIndex}: Initial Permutation, lalu 16 ronde Feistel ---`,
+    simple: `Blok pesan #${blockIndex} (8 karakter) diacak urutan bitnya, lalu dibagi dua: bagian Kiri (L) dan bagian Kanan (R). Kedua bagian ini akan saling "menyilang" sebanyak 16 kali.`
+  });
+
   for(let round = 0; round < 16; round++){
     const f = desFeistel(R, subkeys[round]);
     const newR = desXor(L, f);
     L = R;
     R = newR;
-    steps.push(`Blok ${blockIndex} Ronde ${String(round + 1).padStart(2,'0')}: L=${desBitsToHex(L)}  R=${desBitsToHex(R)}`);
+    steps.push({
+      tech: `Blok ${blockIndex} Ronde ${String(round + 1).padStart(2,'0')}: L=${desBitsToHex(L)}  R=${desBitsToHex(R)}`,
+      simple: `Ronde ${round + 1} dari 16 — bagian Kanan diolah pakai kunci ronde ini (dicampur & disubstitusi), lalu hasilnya digabung-XOR dengan bagian Kiri yang lama. Setelah itu: Kiri baru = Kanan lama, Kanan baru = hasil XOR tadi. → Kiri sekarang: ${desBitsToHex(L)}  Kanan sekarang: ${desBitsToHex(R)}`
+    });
   }
 
   const preOutput = R.concat(L); // swap terakhir
   const output = desPermute(preOutput, DES_FP);
-  return desBitsToBytes(output);
+  const outBytes = desBitsToBytes(output);
+
+  steps.push({
+    tech: `Blok ${blockIndex} selesai (Final Permutation) → ${desBitsToHex(output)}`,
+    simple: `Blok #${blockIndex} sudah melewati 16 ronde. Kiri & Kanan digabung kembali dan bitnya diacak sekali lagi → hasil akhir blok ini: ${desBitsToHex(output)}`
+  });
+
+  return outBytes;
 }
 
 // ===== enkripsi/dekripsi ECB + padding PKCS5 =====
@@ -97,11 +113,20 @@ function desProcess(text, keyString, mode){
   const subkeys = desGenerateSubkeys(keyBytes);
   const steps = [];
 
+  steps.push({
+    tech: `--- Key schedule: kunci 64-bit → 16 subkey 48-bit (PC1 + rotasi + PC2) ---`,
+    simple: `Kunci yang kamu masukkan diolah menjadi 16 "kunci ronde" yang berbeda-beda — satu kunci dipakai di tiap dari 16 ronde di bawah.`
+  });
+
   if(mode === 'encrypt'){
     let bytes = textToBytes(text);
-    const padLen = 8 - (bytes.length % 8 || 8) + (bytes.length % 8 === 0 ? 8 : 0);
     const finalPad = 8 - (bytes.length % 8);
     for(let i = 0; i < finalPad; i++) bytes.push(finalPad);
+
+    steps.push({
+      tech: `Padding PKCS5: +${finalPad} byte nilai 0x${finalPad.toString(16).padStart(2,'0')} agar panjang kelipatan 8`,
+      simple: `Karena DES memproses pesan per 8 karakter, pesan ditambah ${finalPad} karakter "pengisi" di akhir supaya panjangnya pas kelipatan 8.`
+    });
 
     let outBytes = [];
     for(let i = 0; i < bytes.length; i += 8){
@@ -112,6 +137,12 @@ function desProcess(text, keyString, mode){
   } else {
     const bytes = hexToBytes(text);
     const reversedSubkeys = subkeys.slice().reverse();
+
+    steps.push({
+      tech: `Dekripsi: subkey dipakai terbalik (ronde 16 → 1)`,
+      simple: `Untuk membongkar pesan, 16 kunci ronde tadi dipakai dengan urutan terbalik — seperti memutar rekaman mundur.`
+    });
+
     let outBytes = [];
     for(let i = 0; i < bytes.length; i += 8){
       const block = bytes.slice(i, i + 8);
@@ -119,6 +150,12 @@ function desProcess(text, keyString, mode){
     }
     const padLen = outBytes[outBytes.length - 1];
     if(padLen >= 1 && padLen <= 8) outBytes = outBytes.slice(0, outBytes.length - padLen);
+
+    steps.push({
+      tech: `Padding PKCS5 dibuang: ${padLen} byte terakhir`,
+      simple: `${padLen} karakter "pengisi" yang ditambahkan saat enkripsi dibuang kembali, menyisakan pesan aslinya.`
+    });
+
     return { result: bytesToText(outBytes), steps };
   }
 }

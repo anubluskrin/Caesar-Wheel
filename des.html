@@ -47,6 +47,10 @@
     <div class="bento-panel">
       <div class="field">
         <label>log tiap ronde (per blok)</label>
+        <div class="mode-row" id="logModeRow" style="margin-bottom:10px;">
+          <button class="mode-btn active" data-logmode="simple" type="button">Sederhana</button>
+          <button class="mode-btn" data-logmode="tech" type="button">Teknis</button>
+        </div>
         <div id="processLogContainer" class="terminal-log" style="min-height:300px; font-size:15px;"></div>
       </div>
 
@@ -73,6 +77,30 @@
   const outputLabel = document.getElementById('outputLabel');
   const warnBox = document.getElementById('warnBox');
   const runBtn = document.getElementById('runBtn');
+  const logModeButtons = document.querySelectorAll('#logModeRow .mode-btn');
+  const processLogContainer = document.getElementById('processLogContainer');
+
+  let logMode = 'simple';
+  let lastSteps = [];
+
+  function linesFor(steps){
+    return steps.map(s => logMode === 'simple' ? s.simple : s.tech);
+  }
+
+  function renderLogStatic(steps){
+    processLogContainer.innerHTML = linesFor(steps)
+      .map(l => `<p class="term-line">> ${l}</p>`).join('');
+    processLogContainer.scrollTop = processLogContainer.scrollHeight;
+  }
+
+  logModeButtons.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      logModeButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      logMode = btn.dataset.logmode;
+      if(lastSteps.length) renderLogStatic(lastSteps);
+    });
+  });
 
   modeButtons.forEach(btn=>{
     btn.addEventListener('click', ()=>{
@@ -95,8 +123,9 @@
     outputText.textContent = ' ';
     try{
       const { result, steps } = desProcess(inputText.value, keyInput.value, mode);
+      lastSteps = steps;
       runBtn.disabled = true;
-      runTerminalLog('processLogContainer', steps, ()=>{
+      runTerminalLog('processLogContainer', linesFor(steps), ()=>{
         outputText.textContent = result || ' ';
         runBtn.disabled = false;
       }, 15);
