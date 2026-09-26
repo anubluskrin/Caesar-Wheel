@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -23,13 +22,13 @@
     border:4px solid var(--ink);
     border-radius:0;
     padding:28px 20px 22px;
-    margin-bottom:26px;
+    margin-bottom:0;
     box-shadow:6px 6px 0 #000;
   }
 
   .stage{
     position:relative;
-    width:min(70vw, 380px);
+    width:min(60vw, 340px);
     aspect-ratio:1/1;
     margin:6px 0;
   }
@@ -108,7 +107,7 @@
 <body>
 <div class="sheet">
   <div id="nav-slot"></div>
- 
+
   <div class="letterhead">
     <h1>Caesar Cipher Wheel</h1>
     <div class="ref">
@@ -118,49 +117,71 @@
       </a>
     </div>
   </div>
- 
+
   <p class="intro">
     Putar cakram bagian dalam sampai barisnya sejajar dengan huruf yang dicari.
   </p>
- 
-  <div class="stage-wrap">
-    <div class="stage">
-      <svg viewBox="0 0 500 500">
-        <g class="disc-outer" id="outerDisc"></g>
-        <g class="disc-inner" id="innerDisc"></g>
-        <polygon class="pointer-tick" points="250,18 240,44 260,44"></polygon>
-        <circle class="center-hub" cx="250" cy="250" r="24"></circle>
-        <circle class="center-hub-inner" cx="250" cy="250" r="14"></circle>
-      </svg>
+
+    <div class="bento-grid">
+
+    <div class="bento-panel">
+      <div class="stage-wrap">
+        <div class="stage">
+          <svg viewBox="0 0 500 500">
+            <g class="disc-outer" id="outerDisc"></g>
+            <g class="disc-inner" id="innerDisc"></g>
+            <polygon class="pointer-tick" points="250,18 240,44 260,44"></polygon>
+            <circle class="center-hub" cx="250" cy="250" r="24"></circle>
+            <circle class="center-hub-inner" cx="250" cy="250" r="14"></circle>
+          </svg>
+        </div>
+
+        <div class="controls">
+          <button class="nudge" id="nudgeLeft" aria-label="Kurangi pergeseran">&#8249;</button>
+          <div class="shift-badge" id="shiftBadge">geser: 0</div>
+          <button class="nudge" id="nudgeRight" aria-label="Tambah pergeseran">&#8250;</button>
+        </div>
+        <p class="hint">seret cakram dengan mouse atau jari untuk memutar</p>
+      </div>
+
+      <div style="height:16px;"></div>
+
+      <div class="mode-row" style="margin-bottom:0;">
+        <button class="mode-btn active" data-mode="encode">ENKRIPSI</button>
+        <button class="mode-btn" data-mode="decode">DEKRIPSI</button>
+      </div>
     </div>
- 
-    <div class="controls">
-      <button class="nudge" id="nudgeLeft" aria-label="Kurangi pergeseran">&#8249;</button>
-      <div class="shift-badge" id="shiftBadge">geser: 0</div>
-      <button class="nudge" id="nudgeRight" aria-label="Tambah pergeseran">&#8250;</button>
+
+    <div class="bento-panel">
+      <div class="field" style="height:100%; display:flex; flex-direction:column; margin-bottom:0;">
+        <label>proses tiap huruf</label>
+        <div id="processLogContainer" class="terminal-log" style="flex:1; min-height:280px;"></div>
+      </div>
+
+      <div style="height:16px;"></div>
+
+      <button class="run-btn" id="runBtn" style="margin-top:0;">Jalankan Proses ▶</button>
     </div>
-    <p class="hint">seret cakram dengan mouse atau jari untuk memutar</p>
+
   </div>
- 
-  <div class="mode-row">
-    <button class="mode-btn active" data-mode="encode">ENKRIPSI (Sandikan)</button>
-    <button class="mode-btn" data-mode="decode">DEKRIPSI (Pecahkan)</button>
-  </div>
- 
+
+  <div style="height:24px;"></div>
+
   <div class="field">
     <label for="inputText">teks asli</label>
-    <textarea id="inputText" placeholder="Ketik pesan di sini...">HEI ANTEK ANTEK ASING</textarea>
+    <textarea id="inputText" placeholder="Ketik pesan di sini..." style="min-height:80px;">HEI ANTEK ANTEK ASING</textarea>
   </div>
- 
+
   <div class="field">
     <label id="outputLabel">hasil sandi</label>
     <div class="output-box" id="outputText"></div>
     <p class="footnote" id="footnote"></p>
   </div>
- 
+
 </div>
- 
+
 <script src="/shared/nav.js"></script>
+<script src="/shared/process-log.js"></script>
 <script>
 (function(){
   const ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -170,7 +191,7 @@
   const R_INNER = 175;
   const R_INNER_LETTERS = 140;
   const CX = 250, CY = 250;
- 
+
   // --- efek suara (Web Audio API, tanpa file eksternal) ---
   let audioCtx = null;
   function getAudioCtx(){
@@ -190,10 +211,10 @@
     osc.start();
     osc.stop(ctx.currentTime + 0.05);
   }
- 
+
   const outerDisc = document.getElementById('outerDisc');
   const innerDisc = document.getElementById('innerDisc');
- 
+
   let outerRing = `<circle cx="${CX}" cy="${CY}" r="${R_OUTER}" fill="var(--paper-dark)" stroke="var(--ink)" stroke-width="2"></circle>`;
   outerRing += `<circle cx="${CX}" cy="${CY}" r="${R_INNER+18}" fill="none" stroke="var(--ink)" stroke-width="1"></circle>`;
   for(let i=0;i<N;i++){
@@ -208,7 +229,7 @@
     outerRing += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="var(--ink)" stroke-width="1"></line>`;
   }
   outerDisc.innerHTML = outerRing;
- 
+
   let innerRing = `<circle cx="${CX}" cy="${CY}" r="${R_INNER}" fill="var(--paper)" stroke="var(--ink)" stroke-width="2"></circle>`;
   innerRing += `<circle cx="${CX}" cy="${CY}" r="${R_INNER-58}" fill="var(--ink)" stroke="var(--ink)" stroke-width="1"></circle>`;
   for(let i=0;i<N;i++){
@@ -226,33 +247,32 @@
     innerRing += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="var(--ink)" stroke-width="1.5"></line>`;
   }
   innerDisc.innerHTML = innerRing;
- 
+
   const degPerLetter = 360 / N;
-  let shift = 0;
+  window.shift = 0;
   let rotationDeg = 0;
- 
+
   const shiftBadge = document.getElementById('shiftBadge');
   const innerDiscEl = document.getElementById('innerDisc');
- 
+
   function applyRotation(deg, animate){
     innerDiscEl.style.transition = animate ? '' : 'none';
     innerDiscEl.style.transform = `rotate(${deg}deg)`;
   }
- 
+
   function setShift(newShift, animate){
-    shift = ((newShift % N) + N) % N;
-    rotationDeg = shift * degPerLetter;
+    window.shift = ((newShift % N) + N) % N;
+    rotationDeg = window.shift * degPerLetter;
     applyRotation(rotationDeg, animate !== false);
-    shiftBadge.textContent = `geser: ${shift}`;
-    updateOutput();
+    shiftBadge.textContent = `geser: ${window.shift}`;
   }
- 
+
   let dragging = false;
   let dragStartAngle = 0;
   let rotationAtDragStart = 0;
   let lastBoundaryIndex = 0;
   let cachedCtmInverse = null;
- 
+
   function getAngleFromEvent(evt, ctmInverse){
     const svg = innerDiscEl.ownerSVGElement;
     const pt = svg.createSVGPoint();
@@ -264,7 +284,7 @@
     const dy = loc.y - CY;
     return Math.atan2(dy, dx) * 180 / Math.PI;
   }
- 
+
   function startDrag(evt){
     dragging = true;
     getAudioCtx();
@@ -275,27 +295,25 @@
     lastBoundaryIndex = Math.round(rotationDeg / degPerLetter);
     evt.preventDefault();
   }
- 
+
   function moveDrag(evt){
     if(!dragging) return;
     const currentAngle = getAngleFromEvent(evt, cachedCtmInverse);
     let delta = currentAngle - dragStartAngle;
     rotationDeg = rotationAtDragStart + delta;
     applyRotation(rotationDeg, false);
- 
+
     const currentBoundaryIndex = Math.round(rotationDeg / degPerLetter);
     if(currentBoundaryIndex !== lastBoundaryIndex){
       playTick();
       lastBoundaryIndex = currentBoundaryIndex;
- 
-      // update angka & hasil secara realtime, tanpa animasi/snap
-      shift = ((currentBoundaryIndex % N) + N) % N;
-      shiftBadge.textContent = `geser: ${shift}`;
-      updateOutput();
+
+      window.shift = ((currentBoundaryIndex % N) + N) % N;
+      shiftBadge.textContent = `geser: ${window.shift}`;
     }
     evt.preventDefault();
   }
- 
+
   function endDrag(){
     if(!dragging) return;
     dragging = false;
@@ -303,59 +321,72 @@
     const snappedShift = Math.round(rotationDeg / degPerLetter);
     setShift(snappedShift, true);
   }
- 
+
   innerDiscEl.addEventListener('mousedown', startDrag);
   window.addEventListener('mousemove', moveDrag);
   window.addEventListener('mouseup', endDrag);
   innerDiscEl.addEventListener('touchstart', startDrag, {passive:false});
   window.addEventListener('touchmove', moveDrag, {passive:false});
   window.addEventListener('touchend', endDrag);
- 
-  document.getElementById('nudgeLeft').addEventListener('click', ()=> { playTick(1.3); setShift(shift - 1, true); });
-  document.getElementById('nudgeRight').addEventListener('click', ()=> { playTick(1.3); setShift(shift + 1, true); });
- 
-  let mode = 'encode';
+
+  document.getElementById('nudgeLeft').addEventListener('click', ()=> { playTick(1.3); setShift(window.shift - 1, true); });
+  document.getElementById('nudgeRight').addEventListener('click', ()=> { playTick(1.3); setShift(window.shift + 1, true); });
+
+  window.mode = 'encode';
   const modeButtons = document.querySelectorAll('.mode-btn');
   const outputLabel = document.getElementById('outputLabel');
   const footnote = document.getElementById('footnote');
-  const inputText = document.getElementById('inputText');
-  const outputText = document.getElementById('outputText');
- 
+
   modeButtons.forEach(btn=>{
     btn.addEventListener('click', ()=>{
       modeButtons.forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
-      mode = btn.dataset.mode;
-      outputLabel.textContent = mode === 'encode' ? 'hasil sandi' : 'hasil terpecahkan';
-      updateOutput();
+      window.mode = btn.dataset.mode;
+      outputLabel.textContent = window.mode === 'encode' ? 'hasil sandi' : 'hasil terpecahkan';
+      footnote.textContent = '';
+      document.getElementById('outputText').textContent = ' ';
+      document.getElementById('processLogContainer').innerHTML = '';
     });
   });
- 
-  function caesarShift(text, s){
-    return text.replace(/[a-zA-Z]/g, ch => {
+
+  setShift(0, false);
+})();
+</script>
+
+<script>
+  const runBtn = document.getElementById('runBtn');
+  const inputTextEl = document.getElementById('inputText');
+  const outputTextEl = document.getElementById('outputText');
+  const footnoteEl = document.getElementById('footnote');
+
+  function caesarShiftText(text, s){
+    const steps = [];
+    const result = text.replace(/[a-zA-Z]/g, ch => {
       const isUpper = ch === ch.toUpperCase();
       const base = isUpper ? 65 : 97;
       const code = ch.charCodeAt(0) - base;
       const shifted = ((code + s) % 26 + 26) % 26;
-      return String.fromCharCode(shifted + base);
+      const resultChar = String.fromCharCode(shifted + base);
+      steps.push(`${ch} ${s>=0?'+':''}${s} → ${resultChar}`);
+      return resultChar;
     });
+    return { result, steps };
   }
- 
-  function updateOutput(){
-    const text = inputText.value;
-    const s = mode === 'encode' ? shift : -shift;
-    const result = caesarShift(text, s);
-    outputText.textContent = result || ' ';
-    footnote.textContent = mode === 'encode'
-      ? `setiap huruf digeser maju ${shift} posisi.`
-      : `setiap huruf digeser mundur ${shift} posisi untuk mengembalikan pesan.`;
-  }
- 
-  inputText.addEventListener('input', updateOutput);
- 
-  setShift(0, false);
-})();
+
+  runBtn.addEventListener('click', ()=>{
+    const s = window.mode === 'encode' ? window.shift : -window.shift;
+    const { result, steps } = caesarShiftText(inputTextEl.value, s);
+
+    outputTextEl.textContent = ' ';
+    runBtn.disabled = true;
+    runTerminalLog('processLogContainer', steps, ()=>{
+      outputTextEl.textContent = result || ' ';
+      footnoteEl.textContent = window.mode === 'encode'
+        ? `setiap huruf digeser maju ${window.shift} posisi.`
+        : `setiap huruf digeser mundur ${window.shift} posisi untuk mengembalikan pesan.`;
+      runBtn.disabled = false;
+    });
+  });
 </script>
 </body>
 </html>
- 
