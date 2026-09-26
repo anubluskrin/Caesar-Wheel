@@ -297,5 +297,5 @@ textarea:focus, input:focus{
 .bento-panel .field{ margin-bottom:0; }
 
 @media (min-width: 860px){
-  .sheet{ max-width:1180px; }
+  .sheet{ max-width:1280px; }
 }
