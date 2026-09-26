@@ -6,30 +6,20 @@
 <title>Super Enkripsi</title>
 <link rel="stylesheet" href="/shared/theme.css">
 <style>
-  .key-mode-row{
-    display:flex; gap:20px; margin-bottom:16px; font-size:14px;
-  }
+  .key-mode-row{ display:flex; gap:20px; margin-bottom:16px; font-size:15px; }
   .key-mode-row label{ display:flex; align-items:center; gap:6px; margin:0; color:var(--ink); cursor:pointer; }
   .key-mode-row label::before{ content:''; }
-  .separate-keys{ display:none; gap:12px; }
-  .separate-keys.active{ display:grid; grid-template-columns:1fr 1fr; }
-  .rsa-mini{
-    font-size:13px; color:var(--ink-soft); margin-top:8px; word-break:break-all;
-  }
-  .stage-list{ list-style:none; padding:0; margin:10px 0 0; }
+  .separate-keys{ display:none; grid-template-columns:1fr 1fr; gap:14px; }
+  .separate-keys.active{ display:grid; }
+  .stage-list{ list-style:none; padding:0; margin:0; }
   .stage-list li{
-    border:1px solid var(--line); padding:8px 10px; margin-bottom:6px; font-size:14px;
+    border:2px solid var(--ink); padding:10px 12px; margin-bottom:8px; font-size:15px;
+    box-shadow:2px 2px 0 #000;
   }
-  .stage-list b{ display:block; color:var(--ink-soft); font-size:12px; margin-bottom:3px; }
-  .stage-list .val{ word-break:break-all; color:var(--red); }
-  .gen-btn{
-    padding:9px 16px; border:1px solid var(--ink); background:var(--paper-dark);
-    font-family:'Courier Prime', monospace; font-weight:700; cursor:pointer; margin-top:6px;
-  }
-  .gen-btn:hover{ background:var(--ink); color:var(--paper); }
+  .stage-list b{ display:block; color:var(--ink-soft); font-size:12px; margin-bottom:4px; text-transform:uppercase; }
+  .stage-list .val{ word-break:break-all; color:var(--red); font-family:'VT323', monospace; font-size:16px; }
 </style>
 </head>
-
 <body>
 
 <div class="sheet">
@@ -37,10 +27,10 @@
 
   <div class="letterhead">
     <h1>Super Enkripsi</h1>
-    <div class="ref">No. seri: S-04<br>Caesar → Vigenère → XOR → RSA</div>
+    <div class="ref">No. seri: S-04<br>Caesar → Vigenère → RC4 → DES</div>
   </div>
 
-  <p class="footnote" style="margin-bottom:20px;">
+  <p class="footnote" style="margin-bottom:20px; font-size:16px;">
     Pesan dienkripsi berlapis melalui keempat algoritma secara berurutan. Dekripsi
     otomatis membalik urutannya.
   </p>
@@ -65,21 +55,15 @@
         <label for="vigenereKey" style="font-size:12px;">kunci Vigenère</label>
         <input type="text" id="vigenereKey" value="KUNCI">
       </div>
-      <div style="grid-column:1 / -1;">
-        <label for="xorKey" style="font-size:12px;">kunci XOR</label>
-        <input type="text" id="xorKey" value="STREAM">
+      <div>
+        <label for="rc4Key" style="font-size:12px;">kunci RC4</label>
+        <input type="text" id="rc4Key" value="STREAM">
+      </div>
+      <div>
+        <label for="desKey" style="font-size:12px;">kunci DES (8 karakter)</label>
+        <input type="text" id="desKey" value="RAHASIA1" maxlength="8">
       </div>
     </div>
-  </div>
-
-  <div class="field">
-    <label>kunci RSA (tahap terakhir, selalu terpisah)</label>
-    <div class="bit-row" style="display:flex; align-items:center; gap:10px;">
-      <input type="range" id="bitSlider" min="8" max="64" step="8" value="16" style="flex:1;">
-      <span id="bitValue" style="font-weight:700;">16 bit</span>
-      <button class="gen-btn" id="generateBtn">Generate Kunci RSA</button>
-    </div>
-    <div class="rsa-mini" id="rsaMini"></div>
   </div>
 
   <div class="bento-grid">
@@ -92,16 +76,17 @@
 
       <div class="field">
         <label id="inputLabel" for="inputText">teks asli</label>
-        <textarea id="inputText" style="min-height:140px;">SELAMAT DATANG</textarea>
+        <textarea id="inputText" style="min-height:140px; font-size:17px;">SELAMAT DATANG</textarea>
       </div>
 
       <button class="run-btn" id="runBtn">Jalankan Proses ▶</button>
+      <p class="footnote" id="warnBox" style="margin-top:8px; font-size:15px;"></p>
     </div>
 
     <div class="bento-panel">
       <div class="field">
-        <label>log tiap tahap</label>
-        <div id="processLogContainer" class="terminal-log" style="min-height:220px;"></div>
+        <label>hasil per tahap</label>
+        <ul class="stage-list" id="stageList"></ul>
       </div>
     </div>
 
@@ -110,14 +95,13 @@
 
 <script src="/shared/nav.js"></script>
 <script src="/shared/process-log.js"></script>
-<script src="/shared/bigint-utils.js"></script>
+<script src="/shared/byte-utils.js"></script>
 <script src="/ciphers/caesar.js"></script>
 <script src="/ciphers/vigenere.js"></script>
-<script src="/ciphers/xor.js"></script>
-<script src="/ciphers/rsa.js"></script>
+<script src="/ciphers/rc4.js"></script>
+<script src="/ciphers/des.js"></script>
 <script src="/ciphers/super.js"></script>
 <script>
-  let rsaKeys = null;
   let mode = 'encrypt';
 
   const keyModeRadios = document.querySelectorAll('input[name="keyMode"]');
@@ -126,19 +110,15 @@
   const sharedKey = document.getElementById('sharedKey');
   const caesarKey = document.getElementById('caesarKey');
   const vigenereKey = document.getElementById('vigenereKey');
-  const xorKey = document.getElementById('xorKey');
-
-  const bitSlider = document.getElementById('bitSlider');
-  const bitValue = document.getElementById('bitValue');
-  const generateBtn = document.getElementById('generateBtn');
-  const rsaMini = document.getElementById('rsaMini');
+  const rc4Key = document.getElementById('rc4Key');
+  const desKey = document.getElementById('desKey');
 
   const modeButtons = document.querySelectorAll('.mode-btn');
   const inputText = document.getElementById('inputText');
   const inputLabel = document.getElementById('inputLabel');
+  const stageList = document.getElementById('stageList');
+  const warnBox = document.getElementById('warnBox');
   const runBtn = document.getElementById('runBtn');
-
-  bitSlider.addEventListener('input', ()=> bitValue.textContent = `${bitSlider.value} bit`);
 
   keyModeRadios.forEach(r => r.addEventListener('change', ()=>{
     const isShared = document.querySelector('input[name="keyMode"]:checked').value === 'shared';
@@ -152,19 +132,15 @@
       shared: sharedKey.value,
       caesar: caesarKey.value,
       vigenere: vigenereKey.value,
-      xor: xorKey.value
+      rc4: rc4Key.value,
+      des: desKey.value
     };
   }
 
-  function generateKeys(){
-    generateBtn.textContent = 'Menghitung...';
-    generateBtn.disabled = true;
-    setTimeout(()=>{
-      rsaKeys = generateRSAKeys(Number(bitSlider.value));
-      rsaMini.textContent = `n = ${rsaKeys.n} | e = ${rsaKeys.e} | d = ${rsaKeys.d}`;
-      generateBtn.textContent = 'Generate Kunci RSA';
-      generateBtn.disabled = false;
-    }, 10);
+  function renderStages(stages){
+    stageList.innerHTML = stages.map(s => `
+      <li><b>${s.label}</b><span class="val">${s.value || ' '}</span></li>
+    `).join('');
   }
 
   modeButtons.forEach(btn=>{
@@ -172,33 +148,29 @@
       modeButtons.forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       mode = btn.dataset.mode;
-      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'blok angka cipher (dari hasil Sandikan)';
+      inputLabel.textContent = mode === 'encrypt' ? 'teks asli' : 'hex cipher (dari hasil Sandikan)';
+      warnBox.textContent = '';
       if(mode === 'encrypt'){
         inputText.value = 'SELAMAT DATANG';
-      } else if(rsaKeys){
-        inputText.value = runSuperEncrypt('SELAMAT DATANG', getKeyConfig(), rsaKeys).result;
+      } else {
+        inputText.value = runSuperEncrypt('SELAMAT DATANG', getKeyConfig()).result;
       }
     });
   });
 
   runBtn.addEventListener('click', ()=>{
-    if(!rsaKeys) return;
+    warnBox.textContent = '';
     const keyConfig = getKeyConfig();
-    runBtn.disabled = true;
     try{
       const out = mode === 'encrypt'
-        ? runSuperEncrypt(inputText.value, keyConfig, rsaKeys)
-        : runSuperDecrypt(inputText.value, keyConfig, rsaKeys);
-
-      const lines = out.stages.map(s => `${s.label}: ${s.value}`);
-      runTerminalLog('processLogContainer', lines, ()=>{ runBtn.disabled = false; }, 260);
+        ? runSuperEncrypt(inputText.value, keyConfig)
+        : runSuperDecrypt(inputText.value, keyConfig);
+      renderStages(out.stages);
     }catch(err){
-      runTerminalLog('processLogContainer', [`ERROR: ${err.message}`], ()=>{ runBtn.disabled = false; });
+      warnBox.textContent = err.message;
+      stageList.innerHTML = '';
     }
   });
-
-  generateBtn.addEventListener('click', generateKeys);
-  generateKeys();
 </script>
 </body>
 </html>

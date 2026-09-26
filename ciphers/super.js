@@ -5,20 +5,29 @@ function deriveShift(keyText){
 }
 
 function resolveKeys(keyConfig){
+  if(keyConfig.mode === 'shared'){
+    return {
+      caesarShift: deriveShift(keyConfig.shared),
+      vigenereKey: keyConfig.shared,
+      rc4Key: keyConfig.shared,
+      desKey: keyConfig.shared // desProcess otomatis potong/pad jadi 8 karakter
+    };
+  }
   return {
-    caesarShift: keyConfig.mode === 'shared' ? deriveShift(keyConfig.shared) : Number(keyConfig.caesar),
-    vigenereKey: keyConfig.mode === 'shared' ? keyConfig.shared : keyConfig.vigenere,
-    xorKey: keyConfig.mode === 'shared' ? keyConfig.shared : keyConfig.xor
+    caesarShift: Number(keyConfig.caesar),
+    vigenereKey: keyConfig.vigenere,
+    rc4Key: keyConfig.rc4,
+    desKey: keyConfig.des
   };
 }
 
-function runSuperEncrypt(text, keyConfig, rsaKeys){
-  const { caesarShift, vigenereKey, xorKey } = resolveKeys(keyConfig);
+function runSuperEncrypt(text, keyConfig){
+  const { caesarShift, vigenereKey, rc4Key, desKey } = resolveKeys(keyConfig);
 
   const s1 = caesarProcess(text, caesarShift, 'encrypt').result;
   const s2 = vigenereProcess(s1, vigenereKey, 'encrypt').result;
-  const s3 = xorProcess(s2, xorKey, 'encrypt').result;      // hex string
-  const s4 = rsaProcess(s3, rsaKeys, 'encrypt').result;      // blok angka
+  const s3 = rc4Process(s2, rc4Key, 'encrypt').result;       // hex string
+  const s4 = desProcess(s3, desKey, 'encrypt').result;        // hex string
 
   return {
     result: s4,
@@ -26,17 +35,17 @@ function runSuperEncrypt(text, keyConfig, rsaKeys){
       { label: 'Teks Asli', value: text },
       { label: '1. Setelah Caesar', value: s1 },
       { label: '2. Setelah Vigenère', value: s2 },
-      { label: '3. Setelah XOR (hex)', value: s3 },
-      { label: '4. Setelah RSA — hasil akhir', value: s4 }
+      { label: '3. Setelah RC4 (hex)', value: s3 },
+      { label: '4. Setelah DES — hasil akhir (hex)', value: s4 }
     ]
   };
 }
 
-function runSuperDecrypt(cipherText, keyConfig, rsaKeys){
-  const { caesarShift, vigenereKey, xorKey } = resolveKeys(keyConfig);
+function runSuperDecrypt(cipherText, keyConfig){
+  const { caesarShift, vigenereKey, rc4Key, desKey } = resolveKeys(keyConfig);
 
-  const s1 = rsaProcess(cipherText, rsaKeys, 'decrypt').result;   // hex string
-  const s2 = xorProcess(s1, xorKey, 'decrypt').result;
+  const s1 = desProcess(cipherText, desKey, 'decrypt').result; // hex -> hex (RC4 masih dalam bentuk hex)
+  const s2 = rc4Process(s1, rc4Key, 'decrypt').result;
   const s3 = vigenereProcess(s2, vigenereKey, 'decrypt').result;
   const s4 = caesarProcess(s3, caesarShift, 'decrypt').result;
 
@@ -44,8 +53,8 @@ function runSuperDecrypt(cipherText, keyConfig, rsaKeys){
     result: s4,
     stages: [
       { label: 'Cipher Masuk', value: cipherText },
-      { label: '1. Setelah RSA⁻¹', value: s1 },
-      { label: '2. Setelah XOR⁻¹', value: s2 },
+      { label: '1. Setelah DES⁻¹ (hex)', value: s1 },
+      { label: '2. Setelah RC4⁻¹', value: s2 },
       { label: '3. Setelah Vigenère⁻¹', value: s3 },
       { label: '4. Setelah Caesar⁻¹ — teks asli', value: s4 }
     ]
